@@ -31,3 +31,14 @@ exports.getChatBySubject = async (req, res) => {
     res.status(500).send({ message: err.message });
   }
 };
+
+exports.getAllChats = async (req, res) => {
+  try {
+    // Removed userId filtering to fetch all chats from database
+    const chats = await Chat.find().sort({ updatedAt: -1 });
+    res.status(200).json(chats);
+  } catch (err) {
+    console.error("Error fetching all chats:", err);
+    res.status(500).json({ message: "Server error while fetching chats" });
+  }
+};

@@ -15,19 +15,23 @@ const LoginPage = () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password })
       });
+
       const data = await res.json();
+      console.log("Login response:", data); // debug
 
       if (data.accessToken) {
         localStorage.setItem('token', data.accessToken);
+        localStorage.setItem('user', JSON.stringify(data.user));
         navigate('/chat');
       } else {
         alert('Login failed.');
       }
     } catch (err) {
-      console.error(err);
+      console.error('Login error:', err);
       alert('Login error.');
     }
   };
+
 
   return (
     <div className="auth-container">

@@ -1,13 +1,14 @@
 const express = require("express");
 const router = express.Router();
 const chatController = require("../controllers/chat.controller");
+const { verifyToken } = require("../middlewares/authJwt"); // ensure JWT auth
 
-router.post("/chat", chatController.addChat);
-router.get("/chat/:subject", chatController.getChatBySubject);
+// Define routes on the router
+router.post("/chat", verifyToken, chatController.addChat);
+router.get("/chat/:subject", verifyToken, chatController.getChatBySubject);
+router.get("/chat", chatController.getAllChats); // Removed verifyToken
 
+// Export as a function to register with app
 module.exports = (app) => {
-  const chatController = require("../controllers/chat.controller");
-
-  app.post("/api/chat", chatController.addChat);
-  app.get("/api/chat/:subject", chatController.getChatBySubject);
+  app.use('/api', router);
 };
