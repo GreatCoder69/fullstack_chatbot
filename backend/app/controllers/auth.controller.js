@@ -40,7 +40,10 @@ exports.signin = async (req, res) => {
     }
 
     const token = jwt.sign(
-      { id: user._id },
+      {
+        id: user._id,
+        email: user.email  // ✅ Add email to the payload
+      },
       config.secret,
       {
         algorithm: "HS256",

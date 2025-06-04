@@ -134,29 +134,29 @@ const ChatPage = () => {
       <div className="p-3 border-end" style={{ width: 300 }}>
         <Button className="w-100 mb-3" onClick={addTopic}>+ New Chat</Button>
         <div style={{ overflowY: 'auto', maxHeight: 'calc(100vh - 100px)' }}>
-          {topics.map((topic, i) => (
-            <div
-              key={i}
-              className={`p-3 mb-2 rounded ${selectedTopic === topic ? 'bg-primary text-white' : 'bg-light'} topic-item`}
-              onClick={() => selectTopic(topic)}
-              style={{ cursor: 'pointer' }}
-              onMouseEnter={e => {
-                if (selectedTopic !== topic) {
-                  e.currentTarget.classList.add('bg-secondary', 'text-white');
-                  e.currentTarget.classList.remove('bg-light');
-                }
-              }}
-              onMouseLeave={e => {
-                if (selectedTopic !== topic) {
-                  e.currentTarget.classList.remove('bg-secondary', 'text-white');
-                  e.currentTarget.classList.add('bg-light');
-                }
-              }}
-            >
-              <div className="fw-bold">{topic}</div>
-              <small>{(chatHistory[topic] || []).length} messages</small>
-            </div>
+          {topics
+            .filter(topic => (chatHistory[topic]?.length || 0) > 0)
+            .map((topic, idx) => (
+              <div
+                key={idx}
+                className={`topic-item p-3 mb-2 rounded cursor-pointer ${
+                  selectedTopic === topic 
+                    ? 'bg-primary text-white' 
+                    : 'bg-light hover-bg-secondary'
+                }`}
+                onClick={() => selectTopic(topic)}
+                style={{ 
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease'
+                }}
+              >
+                <div className="fw-bold">{topic}</div>
+                <small className={selectedTopic === topic ? 'text-light' : 'text-muted'}>
+                  {chatHistory[topic]?.length || 0} messages
+                </small>
+              </div>
           ))}
+
         </div>
       </div>
 
@@ -173,7 +173,7 @@ const ChatPage = () => {
 
         <div className="flex-grow-1 p-3 overflow-auto">
           {(chat || []).map((msg, i) => (
-            <div key={i} className={`mb-3 ${msg.sender === 'user' ? 'text-end' : 'text-start'}`}>
+            <div key={i} className="mb-3 text-start">
               <div className={`d-inline-block p-3 rounded ${msg.sender === 'user' ? 'bg-primary text-white' : 'bg-light'}`}>{msg.message}</div>
             </div>
           ))}
