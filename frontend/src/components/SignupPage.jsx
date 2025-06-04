@@ -13,28 +13,33 @@ const SignupPage = () => {
   });
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
+  e.preventDefault();
 
-    try {
-      const res = await fetch('http://localhost:8080/api/auth/signup', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
-      });
+  try {
+    const res = await fetch('http://localhost:8080/api/auth/signup', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(formData)
+    });
 
-      const data = await res.json();
+    const data = await res.json();
 
-      if (res.ok) {
-        // 👇 Redirect to /chat directly
-        navigate('/chat');
-      } else {
-        alert(data.message || 'Signup failed');
+    if (res.ok) {
+      // Save token from response to localStorage (adjust if your API uses a different key)
+      if (data.token) {
+        localStorage.setItem('token', data.token);
       }
-    } catch (err) {
-      console.error(err);
-      alert('An error occurred during signup');
+      // Redirect directly to /chat
+      navigate('/chat');
+    } else {
+      alert(data.message || 'Signup failed');
     }
-  };
+  } catch (err) {
+    console.error(err);
+    alert('An error occurred during signup');
+  }
+};
+
 
   return (
     <div className="auth-container">
