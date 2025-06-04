@@ -1,3 +1,5 @@
+require('dotenv').config(); // add this at the very top of server.js
+
 const express = require("express");
 const cors = require("cors");
 

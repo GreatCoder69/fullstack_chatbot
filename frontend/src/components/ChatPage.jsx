@@ -91,7 +91,7 @@ const ChatPage = () => {
       const res = await fetch('http://localhost:8080/api/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'x-access-token': token },
-        body: JSON.stringify({ subject: selectedTopic, question: userMsg.message, answer: 'Placeholder' })
+        body: JSON.stringify({ subject: selectedTopic, question: userMsg.message })
       });
       const data = await res.json();
       const botMsg = { sender: 'bot', message: data.answer || 'No response.', timestamp: new Date().toISOString() };

@@ -1,32 +1,47 @@
+// Add or update a chat
 const Chat = require("../models/chat.model");
 
-// Add or update a chat
 exports.addChat = async (req, res) => {
-  const { subject, question, answer } = req.body;
-  const email = req.userEmail; // from verified token middleware
+  const { subject, question } = req.body;
+  const email = req.userEmail;
 
-  if (!subject || !question || !answer || !email) {
-    return res.status(400).send({ message: "Missing subject, question, answer, or email" });
+  if (!subject || !question || !email) {
+    return res.status(400).send({ message: "Missing subject, question, or email" });
   }
 
-  const chatEntry = { question, answer, timestamp: new Date() };
-
   try {
+    const togetherRes = await fetch("https://api.together.xyz/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${process.env.TOGETHER_API_KEY}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        model: "mistralai/Mistral-7B-Instruct-v0.1", // you can change model
+        messages: [{ role: "user", content: question }]
+      })
+    });
+
+    const result = await togetherRes.json();
+    const answer = result.choices?.[0]?.message?.content || "Sorry, I couldn't respond.";
+
+    const chatEntry = { question, answer, timestamp: new Date() };
     const updatedChat = await Chat.findOneAndUpdate(
-      { _id: subject, email }, // unique pair: subject + user
+      { _id: subject, email },
       {
         $push: { chat: chatEntry },
         $set: { lastUpdated: new Date(), email }
       },
-      { upsert: true, new: true, setDefaultsOnInsert: true }
+      { upsert: true, new: true }
     );
 
-    res.status(200).send(updatedChat);
+    res.status(200).json({ answer });
   } catch (err) {
-    console.error("Error in addChat:", err);
-    res.status(500).send({ message: "Server error while saving chat" });
+    console.error("Together.ai error:", err);
+    res.status(500).send({ message: "LLM request failed." });
   }
 };
+
 
 // Get chat by subject (for a specific user)
 exports.getChatBySubject = async (req, res) => {
