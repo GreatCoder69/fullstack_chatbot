@@ -93,3 +93,19 @@ exports.updateUser = async (req, res) => {
     res.status(500).send({ message: "Error updating user." });
   }
 };
+
+// in controllers/auth.controller.js
+exports.getMe = async (req, res) => {
+  try {
+    const user = await User.findById(req.userId);
+    if (!user) return res.status(404).send({ message: "User not found." });
+
+    res.status(200).send({
+      name: user.name,
+      phone: user.phone,
+      email: user.email
+    });
+  } catch (err) {
+    res.status(500).send({ message: "Error retrieving profile." });
+  }
+};
