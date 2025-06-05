@@ -63,3 +63,33 @@ exports.signin = async (req, res) => {
     res.status(500).send({ message: "Internal server error." });
   }
 };
+
+exports.updateUser = async (req, res) => {
+  try {
+    const { email, name, phone, password } = req.body;
+
+    // Check if the token's email matches the request email
+    if (req.userEmail !== email) {
+      return res.status(403).send({ message: "You can only update your own profile." });
+    }
+
+    const user = await User.findOne({ email });
+
+    if (!user) {
+      return res.status(404).send({ message: "User not found." });
+    }
+
+    // Update only provided fields
+    if (name) user.name = name;
+    if (phone) user.phone = phone;
+    if (password) {
+      user.password = bcrypt.hashSync(password, 8);
+    }
+
+    await user.save();
+    res.status(200).send({ message: "User updated successfully." });
+  } catch (err) {
+    console.error("Update error:", err);
+    res.status(500).send({ message: "Error updating user." });
+  }
+};
