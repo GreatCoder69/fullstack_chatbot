@@ -7,6 +7,7 @@ const User = mongoose.model(
     email: String,
     phone: String,
     password: String,
+    profileimg: String, // URL or path to the profile image
   })
 );
 

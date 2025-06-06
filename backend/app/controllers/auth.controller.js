@@ -12,7 +12,7 @@ exports.signup = async (req, res) => {
       phone: req.body.phone,
       email: req.body.email,
       password: bcrypt.hashSync(req.body.password, 8),
-      // Removed roles array completely
+      profileimg: "https://www.shutterstock.com/image-vector/vector-flat-illustration-grayscale-avatar-600nw-2281862025.jpg", // ✅ Default profile image
     });
 
     await user.save();
@@ -22,6 +22,7 @@ exports.signup = async (req, res) => {
     res.status(500).send({ message: err.message || "Registration failed." });
   }
 };
+
 
 exports.signin = async (req, res) => {
   try {
@@ -66,25 +67,23 @@ exports.signin = async (req, res) => {
 
 exports.updateUser = async (req, res) => {
   try {
-    const { email, name, phone, password } = req.body;
+    const { email, name, phone, password, profileimg } = req.body;
 
-    // Check if the token's email matches the request email
+    // Ensure user can only update their own profile
     if (req.userEmail !== email) {
       return res.status(403).send({ message: "You can only update your own profile." });
     }
 
     const user = await User.findOne({ email });
-
     if (!user) {
       return res.status(404).send({ message: "User not found." });
     }
 
-    // Update only provided fields
+    // Update fields if provided
     if (name) user.name = name;
     if (phone) user.phone = phone;
-    if (password) {
-      user.password = bcrypt.hashSync(password, 8);
-    }
+    if (password) user.password = bcrypt.hashSync(password, 8);
+    if (profileimg) user.profileimg = profileimg;
 
     await user.save();
     res.status(200).send({ message: "User updated successfully." });
@@ -93,6 +92,7 @@ exports.updateUser = async (req, res) => {
     res.status(500).send({ message: "Error updating user." });
   }
 };
+
 
 // in controllers/auth.controller.js
 exports.getMe = async (req, res) => {
@@ -103,7 +103,8 @@ exports.getMe = async (req, res) => {
     res.status(200).send({
       name: user.name,
       phone: user.phone,
-      email: user.email
+      email: user.email,
+      profileimg: user.profileimg  // ✅ Added profile image to response
     });
   } catch (err) {
     res.status(500).send({ message: "Error retrieving profile." });
