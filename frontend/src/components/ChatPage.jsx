@@ -20,6 +20,8 @@ const ChatPage = () => {
   const bottomRef = useRef(null);
   const [showImageInput, setShowImageInput] = useState(false);
   const [showModal, setShowModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [topicToDelete, setTopicToDelete] = useState(null);
   const [profile, setProfile] = useState({
     email: '',
     name: '',
@@ -221,6 +223,39 @@ const ChatPage = () => {
     }
   };
 
+  const handleDeleteTopic = async () => {
+    try {
+      const res = await fetch('http://localhost:8080/api/deletechat', {
+        method: 'POST', // ✅ use PUT here
+        headers: {
+          'Content-Type': 'application/json',
+          'x-access-token': token
+        },
+        body: JSON.stringify({ subject: topicToDelete }) // ✅ send subject
+      });
+
+      if (res.ok) {
+        const updatedTopics = topics.filter((t) => t !== topicToDelete);
+        setTopics(updatedTopics);
+        setChatHistory((prev) => {
+          const copy = { ...prev };
+          delete copy[topicToDelete];
+          return copy;
+        });
+        localStorage.setItem('topicsOrder', JSON.stringify(updatedTopics));
+        if (selectedTopic === topicToDelete) {
+          setSelectedTopic(null);
+          setChat([]);
+        }
+        setShowConfirmDelete(false);
+      } else {
+        const data = await res.json();
+        alert(data.message || 'Failed to delete chat.');
+      }
+    } catch (err) {
+      console.error('Error deleting chat:', err);
+    }
+  };
 
 
   if (loading) return <div className="text-center">Loading...</div>;
@@ -245,7 +280,20 @@ const ChatPage = () => {
                 onClick={() => selectTopic(topic)}
                 style={{ cursor: 'pointer' }}
               >
-                <div className="fw-bold">{topic}</div>
+                <div className="d-flex justify-content-between align-items-center">
+                  <div className="fw-bold">{topic}</div>
+                  <span
+                    className="text-black rounded-circle px-2"
+                    style={{ cursor: 'pointer', fontWeight: 'bold' }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setTopicToDelete(topic);
+                      setShowDeleteModal(true);
+                    }}
+                  >
+                    ×
+                  </span>
+                </div>
                 <small className={selectedTopic === topic ? 'text-light' : 'text-muted'}>
                   {chatHistory[topic]?.length || 0} messages
                 </small>
@@ -393,6 +441,23 @@ const ChatPage = () => {
           </Button>
         </Modal.Footer>
       </Modal>
+      <Modal show={showDeleteModal} onHide={() => setShowDeleteModal(false)} centered>
+        <Modal.Header closeButton>
+          <Modal.Title>Delete Chat</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          Are you sure you want to delete the chat for "<strong>{topicToDelete}</strong>"?
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowDeleteModal(false)}>
+            Cancel
+          </Button>
+          <Button variant="danger" onClick={handleDeleteTopic}>
+            Delete
+          </Button>
+        </Modal.Footer>
+      </Modal>
+
     </div>
   );
 };

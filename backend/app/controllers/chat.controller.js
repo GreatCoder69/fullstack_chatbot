@@ -74,3 +74,26 @@ exports.getAllChats = async (req, res) => {
     res.status(500).json({ message: "Server error while fetching chats" });
   }
 };
+
+// Delete a chat by subject
+exports.deleteChatBySubject = async (req, res) => {
+  const email = req.userEmail;
+  const subject = req.body.subject;
+
+  if (!subject || !email) {
+    return res.status(400).send({ message: "Missing subject or email" });
+  }
+
+  try {
+    const result = await Chat.deleteOne({ _id: subject, email });
+
+    if (result.deletedCount === 0) {
+      return res.status(404).send({ message: "Chat not found or already deleted" });
+    }
+
+    res.status(200).send({ message: `Chat '${subject}' deleted successfully.` });
+  } catch (err) {
+    console.error("Error in deleteChatBySubject:", err);
+    res.status(500).send({ message: "Server error while deleting chat" });
+  }
+};
