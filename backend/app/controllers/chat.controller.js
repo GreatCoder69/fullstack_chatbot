@@ -5,22 +5,33 @@ exports.addChat = async (req, res) => {
   const { subject, question } = req.body;
   const email = req.userEmail;
 
-  if (!subject || !question || !email) {
-    return res.status(400).send({ message: "Missing subject, question, or email" });
+  if (!subject || (!question && !req.file) || !email) {
+    return res.status(400).send({ message: "Missing subject, question/image, or email" });
   }
 
   try {
-    // 🔁 Call Gemini via your Flask backend
-    const geminiRes = await fetch("http://localhost:5000/api/gemini", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({ question })
-    });
+    let geminiRes, answer;
+    // If image is present, send as multipart/form-data
+    if (req.file) {
+      const formData = new FormData();
+      formData.append('image', req.file.buffer, req.file.originalname);
+      formData.append('prompt', question || "Describe this image");
+
+      geminiRes = await fetch("http://localhost:5000/api/gemini", {
+        method: "POST",
+        body: formData
+      });
+    } else {
+      // Text only
+      geminiRes = await fetch("http://localhost:5000/api/gemini", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ question })
+      });
+    }
 
     const result = await geminiRes.json();
-    const answer = result.answer || "Sorry, I couldn't respond.";
+    answer = result.answer || "Sorry, I couldn't respond.";
 
     const chatEntry = { question, answer, timestamp: new Date() };
 

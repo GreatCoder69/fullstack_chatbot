@@ -224,47 +224,53 @@ const ChatPage = () => {
     }
   };
   const handleImageUpload = async (file) => {
-    if (!selectedTopic || !file) return;
+    if (!file || !selectedTopic) return;
 
+    // Create a preview URL for the image
+    const imageUrl = URL.createObjectURL(file);
+
+    // Add the image message to the chat immediately
+    const userMsg = {
+      sender: 'user',
+      image: imageUrl, // Use 'image' instead of 'message' for images
+      timestamp: new Date().toISOString()
+    };
+    setChat((prev) => [...prev, userMsg]);
+    setChatHistory((prev) => ({
+      ...prev,
+      [selectedTopic]: [...(prev[selectedTopic] || []), userMsg]
+    }));
+
+    // Now upload the image to the backend as before
     const formData = new FormData();
     formData.append('image', file);
     formData.append('subject', selectedTopic);
 
     try {
-      const res = await fetch('http://localhost:8080/api/uploadimg', {
+      const res = await fetch('http://localhost:5000/api/gemini', {
         method: 'POST',
-        headers: {
-          'x-access-token': token
-          // Do NOT set Content-Type for FormData
-        },
         body: formData
       });
 
       const data = await res.json();
+      if (data && data.answer) {
+        const botMsg = {
+          sender: 'bot',
+          message: data.answer,
+          timestamp: new Date().toISOString()
+        };
 
-      const userMsg = {
-        sender: 'user',
-        message: `Uploaded image: ${data.filename || 'Image'}`,
-        timestamp: new Date().toISOString()
-      };
-
-      const botMsg = {
-        sender: 'bot',
-        message: data.response || 'Image uploaded.',
-        timestamp: new Date().toISOString()
-      };
-
-      const newChat = [...(chat || []), userMsg, botMsg];
-      setChat(newChat);
-      setChatHistory((prev) => ({
-        ...prev,
-        [selectedTopic]: newChat
-      }));
-      reorderTopics(selectedTopic);
+        setChat((prev) => [...prev, botMsg]);
+        setChatHistory((prev) => ({
+          ...prev,
+          [selectedTopic]: [...(prev[selectedTopic] || []), botMsg]
+        }));
+      }
     } catch (err) {
-      console.error('Image upload error:', err);
+      console.error('Image upload failed:', err);
     }
   };
+
 
   const handleDeleteTopic = async () => {
     try {
@@ -377,13 +383,26 @@ const ChatPage = () => {
         <div className="flex-grow-1 p-3 overflow-auto">
           {(chat || []).map((msg, i) => (
             <div key={i} className="mb-3 text-start">
-              <div className={`d-inline-block p-3 rounded ${msg.sender === 'user' ? 'bg-primary text-white' : 'bg-light'}`}>
-                {msg.message}
+              <div
+                className={`d-inline-block p-3 rounded ${
+                  msg.sender === 'user' ? 'bg-primary text-white' : 'bg-light'
+                }`}
+              >
+                {msg.image ? (
+                  <img
+                    src={msg.image}
+                    alt="User upload"
+                    style={{ maxWidth: 200, borderRadius: 8 }}
+                  />
+                ) : (
+                  msg.message
+                )}
               </div>
             </div>
           ))}
           <div ref={bottomRef}></div>
         </div>
+
 
         <div className="p-3 border-top">
           <InputGroup>
