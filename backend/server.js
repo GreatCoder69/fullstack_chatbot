@@ -43,6 +43,10 @@ require('./app/routes/auth.routes')(app);
 require('./app/routes/user.routes')(app);
 require("./app/routes/chat.routes")(app);
 
+// ✅ Upload route
+const uploadRoutes = require("./app/routes/upload.routes");
+app.use("/api", uploadRoutes);
+
 // Start server
 const PORT = process.env.PORT || 8080;
 app.listen(PORT, () => {

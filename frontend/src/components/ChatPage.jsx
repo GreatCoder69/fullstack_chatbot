@@ -22,6 +22,7 @@ const ChatPage = () => {
   const [showModal, setShowModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [topicToDelete, setTopicToDelete] = useState(null);
+  const [imageFile, setImageFile] = useState(null);
   const [profile, setProfile] = useState({
     email: '',
     name: '',
@@ -222,6 +223,48 @@ const ChatPage = () => {
       console.error('Error updating profile:', err);
     }
   };
+  const handleImageUpload = async (file) => {
+    if (!selectedTopic || !file) return;
+
+    const formData = new FormData();
+    formData.append('image', file);
+    formData.append('subject', selectedTopic);
+
+    try {
+      const res = await fetch('http://localhost:8080/api/uploadimg', {
+        method: 'POST',
+        headers: {
+          'x-access-token': token
+          // Do NOT set Content-Type for FormData
+        },
+        body: formData
+      });
+
+      const data = await res.json();
+
+      const userMsg = {
+        sender: 'user',
+        message: `Uploaded image: ${data.filename || 'Image'}`,
+        timestamp: new Date().toISOString()
+      };
+
+      const botMsg = {
+        sender: 'bot',
+        message: data.response || 'Image uploaded.',
+        timestamp: new Date().toISOString()
+      };
+
+      const newChat = [...(chat || []), userMsg, botMsg];
+      setChat(newChat);
+      setChatHistory((prev) => ({
+        ...prev,
+        [selectedTopic]: newChat
+      }));
+      reorderTopics(selectedTopic);
+    } catch (err) {
+      console.error('Image upload error:', err);
+    }
+  };
 
   const handleDeleteTopic = async () => {
     try {
@@ -352,6 +395,27 @@ const ChatPage = () => {
                 if (e.key === 'Enter') handleSend();
               }}
             />
+
+            {/* Image Upload Button */}
+            <input
+              type="file"
+              accept="image/*"
+              id="image-upload"
+              style={{ display: 'none' }}
+              onChange={(e) => {
+                if (e.target.files[0]) {
+                  handleImageUpload(e.target.files[0]);
+                  e.target.value = ''; // reset input
+                }
+              }}
+            />
+            <Button
+              variant="secondary"
+              onClick={() => document.getElementById('image-upload').click()}
+            >
+              +
+            </Button>
+
             <Button onClick={handleSend} disabled={!currentMessage.trim()}>
               Send
             </Button>
