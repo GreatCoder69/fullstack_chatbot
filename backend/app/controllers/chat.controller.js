@@ -10,22 +10,20 @@ exports.addChat = async (req, res) => {
   }
 
   try {
-    const togetherRes = await fetch("https://api.together.xyz/v1/chat/completions", {
+    // 🔁 Call Gemini via your Flask backend
+    const geminiRes = await fetch("http://localhost:5000/api/gemini", {
       method: "POST",
       headers: {
-        "Authorization": `Bearer ${process.env.TOGETHER_API_KEY}`,
         "Content-Type": "application/json"
       },
-      body: JSON.stringify({
-        model: "mistralai/Mistral-7B-Instruct-v0.1", // you can change model
-        messages: [{ role: "user", content: question }]
-      })
+      body: JSON.stringify({ question })
     });
 
-    const result = await togetherRes.json();
-    const answer = result.choices?.[0]?.message?.content || "Sorry, I couldn't respond.";
+    const result = await geminiRes.json();
+    const answer = result.answer || "Sorry, I couldn't respond.";
 
     const chatEntry = { question, answer, timestamp: new Date() };
+
     const updatedChat = await Chat.findOneAndUpdate(
       { _id: subject, email },
       {
@@ -37,7 +35,7 @@ exports.addChat = async (req, res) => {
 
     res.status(200).json({ answer });
   } catch (err) {
-    console.error("Together.ai error:", err);
+    console.error("Gemini LLM error:", err);
     res.status(500).send({ message: "LLM request failed." });
   }
 };
