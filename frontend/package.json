@@ -4,16 +4,18 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "rimraf node_modules/.vite && vite",
     "build": "vite build",
     "preview": "vite preview"
   },
   "devDependencies": {
+    "rimraf": "^6.0.1",
     "vite": "^6.3.5"
   },
   "dependencies": {
     "axios": "^1.9.0",
     "bootstrap": "^5.3.6",
+    "multer": "^2.0.1",
     "react": "^19.1.0",
     "react-bootstrap": "^2.10.10",
     "react-dom": "^19.1.0",

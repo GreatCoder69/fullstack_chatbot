@@ -67,7 +67,10 @@ exports.signin = async (req, res) => {
 
 exports.updateUser = async (req, res) => {
   try {
-    const { email, name, phone, password, profileimg } = req.body;
+    const { email, name, phone, password } = req.body;
+
+    // File will be available if Multer is used in the route middleware
+    const file = req.file;
 
     // Ensure user can only update their own profile
     if (req.userEmail !== email) {
@@ -79,14 +82,20 @@ exports.updateUser = async (req, res) => {
       return res.status(404).send({ message: "User not found." });
     }
 
-    // Update fields if provided
     if (name) user.name = name;
     if (phone) user.phone = phone;
     if (password) user.password = bcrypt.hashSync(password, 8);
-    if (profileimg) user.profileimg = profileimg;
+    if (file) {
+      // Save file URL — assuming static served from /uploads
+      user.profileimg = `http://localhost:8080/uploads/${file.filename}`;
+    }
 
     await user.save();
-    res.status(200).send({ message: "User updated successfully." });
+
+    res.status(200).send({
+      message: "User updated successfully.",
+      profileimg: user.profileimg // Return updated image path to update frontend
+    });
   } catch (err) {
     console.error("Update error:", err);
     res.status(500).send({ message: "Error updating user." });
@@ -104,7 +113,7 @@ exports.getMe = async (req, res) => {
       name: user.name,
       phone: user.phone,
       email: user.email,
-      profileimg: user.profileimg  // ✅ Added profile image to response
+      profileimg: user.profileimg 
     });
   } catch (err) {
     res.status(500).send({ message: "Error retrieving profile." });

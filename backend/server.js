@@ -1,29 +1,27 @@
-require('dotenv').config(); // add this at the very top of server.js
+require('dotenv').config(); // Load environment variables
 
 const express = require("express");
 const cors = require("cors");
+const path = require("path");
 
 const app = express();
 
+// Enable CORS
 app.use(cors());
 
-// parse requests of content-type - application/json
+// Parse requests
 app.use(express.json());
-
-// parse requests of content-type - application/x-www-form-urlencoded
 app.use(express.urlencoded({ extended: true }));
 
-// simple route
+// ✅ Serve static files from /uploads
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+// Default route
 app.get("/", (req, res) => {
   res.json({ message: "Welcome to bezkoder application." });
 });
 
-// set port, listen for requests
-const PORT = process.env.PORT || 8080;
-app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}.`);
-});
-
+// MongoDB connection
 const db = require("./app/models");
 const dbConfig = require("./app/db.config.js");
 
@@ -40,6 +38,13 @@ db.mongoose
     process.exit();
   });
 
+// Import routes
 require('./app/routes/auth.routes')(app);
 require('./app/routes/user.routes')(app);
 require("./app/routes/chat.routes")(app);
+
+// Start server
+const PORT = process.env.PORT || 8080;
+app.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}.`);
+});

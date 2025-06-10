@@ -18,7 +18,7 @@ const ChatPage = () => {
   const [currentMessage, setCurrentMessage] = useState('');
   const [loading, setLoading] = useState(true);
   const bottomRef = useRef(null);
-
+  const [showImageInput, setShowImageInput] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [profile, setProfile] = useState({
     email: '',
@@ -28,7 +28,7 @@ const ChatPage = () => {
   });
   const [successMessage, setSuccessMessage] = useState('');
 
-  // Fetch user profile once on mount
+  // FETCH user profile once on mount
   useEffect(() => {
     if (!token) {
       navigate('/login');
@@ -175,6 +175,7 @@ const ChatPage = () => {
         email: data.email,
         name: data.name,
         phone: data.phone,
+        profileimg: data.profileimg || 'https://www.shutterstock.com/image-vector/vector-flat-illustration-grayscale-avatar-600nw-2281862025.jpg',
         password: ''
       });
     } catch (err) {
@@ -183,39 +184,43 @@ const ChatPage = () => {
   };
 
   const handleProfileUpdate = async () => {
-    const updateBody = {
-      email: profile.email,
-      name: profile.name,
-      phone: profile.phone,
-      ...(profile.password && { password: profile.password }) // only send password if not empty
-    };
+    const formData = new FormData();
+    formData.append('email', profile.email);
+    formData.append('name', profile.name);
+    formData.append('phone', profile.phone);
+    if (profile.password) formData.append('password', profile.password);
+    if (profile.profileimgFile) formData.append('profileimg', profile.profileimgFile);
 
     try {
       const res = await fetch('http://localhost:8080/api/auth/update', {
         method: 'PUT',
         headers: {
-          'Content-Type': 'application/json',
           'x-access-token': token
+          // ❌ Do NOT set Content-Type manually here
         },
-        body: JSON.stringify(updateBody)
+        body: formData
       });
 
-      const data = await res.json(); // parse response
+      const data = await res.json();
 
       if (res.ok) {
         setSuccessMessage('Profile updated successfully!');
+        setProfile((prev) => ({
+          ...prev,
+          profileimg: data.profileimg || prev.profileimg
+        }));
         setTimeout(() => {
           setSuccessMessage('');
           setShowModal(false);
         }, 2000);
       } else {
-        console.error('Update failed:', data.message || data.error || data);
-        alert(data.message || data.error || 'Failed to update profile.');
+        alert(data.message || 'Failed to update profile.');
       }
     } catch (err) {
       console.error('Error updating profile:', err);
     }
   };
+
 
 
   if (loading) return <div className="text-center">Loading...</div>;
@@ -250,16 +255,33 @@ const ChatPage = () => {
       </div>
 
       <div className="flex-grow-1 d-flex flex-column">
-        <div className="p-3 border-bottom d-flex justify-content-between">
+        <div className="p-3 border-bottom d-flex justify-content-between align-items-center">
           <h5>{selectedTopic}</h5>
-          <Dropdown>
-            <Dropdown.Toggle variant="outline-secondary">👤</Dropdown.Toggle>
+          <Dropdown align="end">
+            <Dropdown.Toggle
+              variant="outline-secondary"
+              className="p-0 border-0 bg-transparent"
+              style={{ boxShadow: 'none' }}
+            >
+              <img
+                src={
+                  profile.profileimgFile
+                    ? URL.createObjectURL(profile.profileimgFile)
+                    : profile.profileimg
+                }
+                alt="Profile"
+                className="rounded-circle"
+                style={{ width: '36px', height: '36px', objectFit: 'cover' }}
+              />
+
+            </Dropdown.Toggle>
             <Dropdown.Menu>
               <Dropdown.Item onClick={() => setShowModal(true)}>Edit Profile</Dropdown.Item>
               <Dropdown.Item onClick={handleLogout}>Logout</Dropdown.Item>
             </Dropdown.Menu>
           </Dropdown>
         </div>
+
 
         <div className="flex-grow-1 p-3 overflow-auto">
           {(chat || []).map((msg, i) => (
@@ -295,6 +317,39 @@ const ChatPage = () => {
           <Modal.Title>Edit Profile</Modal.Title>
         </Modal.Header>
         <Modal.Body>
+          {/* Profile Image Display + Edit */}
+          <div className="text-center mb-4">
+            <img
+              src={
+                profile.profileimgFile
+                  ? URL.createObjectURL(profile.profileimgFile)
+                  : profile.profileimg
+              }
+              alt="Profile"
+              className="rounded-circle"
+              style={{
+                width: '120px',
+                height: '120px',
+                objectFit: 'cover',
+                cursor: 'pointer',
+                border: '3px solid #ccc'
+              }}
+              onClick={() => setShowImageInput(!showImageInput)}
+            />
+
+            {showImageInput && (
+              <Form.Group className="mt-3">
+                <Form.Label>Upload New Profile Image</Form.Label>
+                <Form.Control
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => setProfile({ ...profile, profileimgFile: e.target.files[0] })}
+                />
+              </Form.Group>
+            )}
+          </div>
+
+          {/* Basic Details Form */}
           <Form>
             <Form.Group className="mb-3">
               <Form.Label>Email (readonly)</Form.Label>
@@ -326,7 +381,8 @@ const ChatPage = () => {
               />
             </Form.Group>
           </Form>
-          {successMessage && <p className="text-success">{successMessage}</p>}
+
+          {successMessage && <p className="text-success text-center">{successMessage}</p>}
         </Modal.Body>
         <Modal.Footer>
           <Button variant="secondary" onClick={() => setShowModal(false)}>

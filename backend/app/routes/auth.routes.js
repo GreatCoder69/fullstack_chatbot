@@ -1,8 +1,25 @@
 const { verifySignUp } = require("../middlewares");
 const controller = require("../controllers/auth.controller");
+const { verifyToken } = require("../middlewares/authJwt");
 
-module.exports = function(app) {
-  app.use(function(req, res, next) {
+const multer = require("multer");
+const path = require("path");
+
+// Multer storage config
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, "uploads/"); // ensure this folder exists
+  },
+  filename: function (req, file, cb) {
+    const uniqueName = Date.now() + "-" + file.originalname;
+    cb(null, uniqueName);
+  },
+});
+
+const upload = multer({ storage });
+
+module.exports = function (app) {
+  app.use(function (req, res, next) {
     res.header(
       "Access-Control-Allow-Headers",
       "x-access-token, Origin, Content-Type, Accept"
@@ -12,13 +29,18 @@ module.exports = function(app) {
 
   app.post(
     "/api/auth/signup",
-    [
-      verifySignUp.checkDuplicateUsernameOrEmail,
-    ],
+    [verifySignUp.checkDuplicateUsernameOrEmail],
     controller.signup
   );
 
   app.post("/api/auth/signin", controller.signin);
-  app.put("/api/auth/update", verifyToken, controller.updateUser);
+
+  // ✅ Updated: uses Multer + Token Middleware
+  app.put(
+    "/api/auth/update",
+    [verifyToken, upload.single("profileimg")],
+    controller.updateUser
+  );
+
   app.get("/api/auth/me", verifyToken, controller.getMe);
 };
