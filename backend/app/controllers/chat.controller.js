@@ -1,15 +1,11 @@
 const fs = require('fs');
 const path = require('path');
-const { v4: uuidv4 } = require('uuid');
 const Chat = require("../models/chat.model");
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 
 // Initialize Gemini API
 const genAI = new GoogleGenerativeAI("AIzaSyAlUit1rJO9Hz6Kl84P1iwVbaK51ipzfMI");
-
-// Load multimodal model
 const model = genAI.getGenerativeModel({ model: "models/gemini-2.5-flash-preview-05-20" });
-
 
 exports.addChat = async (req, res) => {
   const { subject, question } = req.body;
@@ -26,18 +22,16 @@ exports.addChat = async (req, res) => {
     let imageUrl = null;
 
     if (req.file) {
-      // Validate image MIME type
       const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
       if (!allowedTypes.includes(req.file.mimetype)) {
         return res.status(400).send({ message: "Unsupported file type" });
       }
 
-      // File already saved by multer.diskStorage, use its path
-      const filePath = req.file.path;
-      imageUrl = `/uploads/${req.file.filename}`;
+      const filePath = req.file.path; // ✅ path to file on disk
+      imageUrl = `/uploads/${req.file.filename}`; // ✅ public path to serve later
 
-      // Read image from disk for Gemini input
-      const imageBuffer = req.file.buffer;
+      // ✅ Read image from disk
+      const imageBuffer = fs.readFileSync(filePath);
       const base64Image = imageBuffer.toString("base64");
       const mimeType = req.file.mimetype;
 
@@ -52,7 +46,7 @@ exports.addChat = async (req, res) => {
 
       answer = result.response.text();
     } else {
-      // Text-only case
+      // Text-only
       const result = await model.generateContent({
         contents: [{ role: "user", parts: [{ text: question }] }]
       });
@@ -60,10 +54,10 @@ exports.addChat = async (req, res) => {
       answer = result.response.text();
     }
 
-    // Save to MongoDB
+    // Save chat to MongoDB
     const chatEntry = {
       question: question || null,
-      image: imageUrl || null,
+      imageUrl: imageUrl || null,
       answer,
       timestamp: new Date()
     };
@@ -83,6 +77,7 @@ exports.addChat = async (req, res) => {
     res.status(500).send({ message: "Failed to generate response from Gemini" });
   }
 };
+
 
 // Get chat by subject (for a specific user)
 exports.getChatBySubject = async (req, res) => {

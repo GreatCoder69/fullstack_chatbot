@@ -4,12 +4,13 @@ const fs = require("fs");
 
 const uploadDir = path.join(__dirname, "..", "uploads");
 
-// Create uploads folder if it doesn't exist
+// ✅ Ensure /uploads exists (with recursive true)
 if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir);
+  fs.mkdirSync(uploadDir, { recursive: true });
+  console.log("Created uploads directory at", uploadDir);
 }
 
-// Configure disk storage for saving files to the uploads folder
+// ✅ Configure disk storage
 const diskStorage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, uploadDir);
@@ -20,20 +21,20 @@ const diskStorage = multer.diskStorage({
   }
 });
 
-// Optional: Accept only images
+// ✅ Filter to allow only images
 const fileFilter = (req, file, cb) => {
   const ext = path.extname(file.originalname).toLowerCase();
-  if (![".jpg", ".jpeg", ".png"].includes(ext)) {
-    return cb(new Error("Only images are allowed"), false);
+  if (![".jpg", ".jpeg", ".png", ".webp"].includes(ext)) {
+    return cb(new Error("Only JPG, PNG, or WEBP images are allowed"), false);
   }
   cb(null, true);
 };
 
-// Export both disk and memory uploads
+// ✅ Export both configurations
 const diskUpload = multer({ storage: diskStorage, fileFilter });
 const memoryUpload = multer({ storage: multer.memoryStorage(), fileFilter });
 
 module.exports = {
-  diskUpload,   // For /uploadimg — saves to disk
-  memoryUpload  // For /chat — image buffer in memory (for Gemini)
+  diskUpload,   // Saves file to disk (use in /uploadimg route)
+  memoryUpload  // Keeps file in memory (for Gemini API if needed)
 };

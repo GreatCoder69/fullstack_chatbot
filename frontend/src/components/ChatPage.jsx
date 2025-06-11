@@ -65,11 +65,28 @@ const ChatPage = () => {
       const history = {};
       sorted.forEach((c) => {
         const topic = c._id;
-        history[topic] = (c.chat || []).flatMap((entry) => [
-          { sender: 'user', message: entry.question, timestamp: entry.timestamp },
-          { sender: 'bot', message: entry.answer, timestamp: entry.timestamp }
-        ]);
+        history[topic] = [];
+
+        (c.chat || []).forEach((entry) => {
+          if (entry.question || entry.imageURL) {
+            history[topic].push({
+              sender: 'user',
+              message: entry.question || (entry.imageURL ? '📷 Image' : ''),
+              image: entry.imageURL ? `http://localhost:8080${entry.imageURL}` : null,
+              timestamp: entry.timestamp
+            });
+          }
+
+          if (entry.answer) {
+            history[topic].push({
+              sender: 'bot',
+              message: entry.answer,
+              timestamp: entry.timestamp
+            });
+          }
+        });
       });
+
 
       const sortedTopics = sorted.map((c) => c._id);
       const savedOrder = localStorage.getItem('topicsOrder');
@@ -99,11 +116,23 @@ const ChatPage = () => {
   const handleSend = async () => {
     if ((!currentMessage.trim() && !imageFile) || !selectedTopic) return;
 
-    const userMsg = {
-      sender: 'user',
-      message: currentMessage || '📷 Image',
-      timestamp: new Date().toISOString()
-    };
+    let userMsg;
+      if (imageFile) {
+        userMsg = {
+          sender: 'user',
+          image: URL.createObjectURL(imageFile),
+          message: currentMessage || '', // optional: include text with image
+          timestamp: new Date().toISOString(),
+          temp: true // mark as temporary for later replacement
+        };
+      } else {
+        userMsg = {
+          sender: 'user',
+          message: currentMessage,
+          timestamp: new Date().toISOString()
+        };
+      }
+
 
     const newChat = [...chat, userMsg];
     setChat(newChat);
@@ -131,12 +160,39 @@ const ChatPage = () => {
       });
 
       const data = await res.json();
-      const botMsg = {
-        sender: 'bot',
-        message: data.answer || 'No response.',
-        timestamp: new Date().toISOString()
-      };
-      const updatedChat = [...newChat, botMsg];
+        let updatedChat = [...newChat];
+
+        // Replace only the last temporary user image message with the backend URL
+        if (imageFile && data.imageUrl) {
+          const lastTempIndex = [...updatedChat].reverse().findIndex(
+            (msg) => msg.temp && msg.sender === 'user' && msg.image
+          );
+          if (lastTempIndex !== -1) {
+            const idx = updatedChat.length - 1 - lastTempIndex;
+            updatedChat[idx] = {
+              ...updatedChat[idx],
+              image: `http://localhost:8080${data.imageUrl}`,
+              message: data.question, // update with backend's question if needed
+              temp: false
+            };
+          }
+        }
+
+
+        // Add bot reply
+        const botMsg = {
+          sender: 'bot',
+          message: data.answer || 'No response.',
+          timestamp: new Date().toISOString()
+        };
+        updatedChat = [...updatedChat, botMsg];
+
+        setChat(updatedChat);
+        setChatHistory((prev) => ({
+          ...prev,
+          [selectedTopic]: updatedChat
+        }));
+
       setChat(updatedChat);
       setChatHistory((prev) => ({
         ...prev,
@@ -398,16 +454,18 @@ const ChatPage = () => {
                   msg.sender === 'user' ? 'bg-primary text-white' : 'bg-light'
                 }`}
               >
-                {msg.image ? (
+                {msg.image && (
                   <img
                     src={msg.image}
                     alt="User upload"
                     style={{ maxWidth: 200, borderRadius: 8 }}
                   />
-                ) : (
-                  msg.message
+                )}
+                {msg.message && (
+                  <div style={{ marginTop: 8 }}>{msg.message}</div>
                 )}
               </div>
+
             </div>
           ))}
           <div ref={bottomRef}></div>

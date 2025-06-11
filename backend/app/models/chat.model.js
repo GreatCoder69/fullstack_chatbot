@@ -2,12 +2,13 @@ const mongoose = require('mongoose');
 
 const ChatSchema = new mongoose.Schema({
   _id: String, // subject
-  email: { type: String, required: true }, // 👈 Added this line
+  email: { type: String, required: true },
   chat: [
     {
       question: String,
       answer: String,
-      timestamp: { type: Date, default: Date.now }
+      timestamp: { type: Date, default: Date.now },
+      imageUrl: String // 👈 Added to store uploaded image path
     }
   ],
   lastUpdated: { type: Date, default: Date.now }
