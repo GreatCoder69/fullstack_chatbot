@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { Card, Accordion, ToggleButton, ListGroup, Image } from 'react-bootstrap';
+import { Card, Accordion, ListGroup, Image, Button } from 'react-bootstrap';
 
 const AdminPanel = () => {
   const [users, setUsers] = useState([]);
   const [expandedUser, setExpandedUser] = useState(null);
-
+  const [statusMap, setStatusMap] = useState({});
   const token = localStorage.getItem('token');
 
   useEffect(() => {
@@ -13,12 +13,32 @@ const AdminPanel = () => {
     })
       .then(res => res.json())
       .then(data => {
-        // Filter out users with 0 chats
         const filtered = data.filter(user => user.chats && user.chats.length > 0);
         setUsers(filtered);
+
+        // Initialize status map from backend
+        const map = {};
+        filtered.forEach(user => map[user.email] = user.isActive);
+        setStatusMap(map);
       })
       .catch(console.error);
   }, []);
+
+  const toggleStatus = (email) => {
+    const newStatus = !statusMap[email];
+    fetch(`http://localhost:8080/api/admin/toggle-status`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-access-token': token,
+      },
+      body: JSON.stringify({ email, isActive: newStatus })
+    }).then(res => {
+      if (res.ok) {
+        setStatusMap(prev => ({ ...prev, [email]: newStatus }));
+      }
+    });
+  };
 
   return (
     <div className="container py-4">
@@ -30,8 +50,7 @@ const AdminPanel = () => {
             <Accordion.Header onClick={() => setExpandedUser(expandedUser === idx ? null : idx)}>
               <div className="d-flex align-items-center w-100">
                 <Image
-                  src={user.profileimg} // ✅ works because it's already a full URL
-
+                  src={user.profileimg}
                   roundedCircle
                   width={40}
                   height={40}
@@ -43,15 +62,12 @@ const AdminPanel = () => {
                   <div className="fw-bold">{user.name}</div>
                   <small className="text-muted">{user.email}</small>
                 </div>
-                <ToggleButton
-                  type="checkbox"
-                  variant="outline-primary"
-                  checked={false}
-                  value="1"
-                  onChange={() => console.log('Toggle placeholder')}
+                <Button
+                  onClick={() => toggleStatus(user.email)}
+                  variant={statusMap[user.email] ? 'success' : 'danger'}
                 >
-                  Toggle
-                </ToggleButton>
+                  {statusMap[user.email] ? 'Active' : 'Blocked'}
+                </Button>
               </div>
             </Accordion.Header>
 

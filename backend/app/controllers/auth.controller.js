@@ -33,6 +33,9 @@ exports.signin = async (req, res) => {
     if (!user) {
       return res.status(404).send({ message: "User Not found." });
     }
+    if (!user.isActive){
+      return res.status(403).send({ message: "Account is disabled by admin." });
+    }
 
     const passwordIsValid = bcrypt.compareSync(req.body.password, user.password);
     if (!passwordIsValid) {
@@ -137,3 +140,16 @@ exports.getMe = async (req, res) => {
     res.status(500).send({ message: "Error retrieving profile." });
   }
 };
+
+exports.toggleUserStatus = async (req, res) => {
+  const { email, isActive } = req.body;
+
+  const user = await User.findOne({ email });
+  if (!user) return res.status(404).send({ message: "User not found." });
+
+  user.isActive = isActive;
+  await user.save();
+
+  res.send({ message: `User ${isActive ? "enabled" : "disabled"}.` });
+};
+

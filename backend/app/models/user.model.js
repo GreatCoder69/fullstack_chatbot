@@ -8,7 +8,11 @@ const User = mongoose.model(
     phone: String,
     password: String,
     profileimg: String,
-    isAdmin: { type: Boolean, default: false } // <-- add this
+    isAdmin: { type: Boolean, default: false },
+    isActive: {
+      type: Boolean,
+      default: true,
+    },
   })
 );
 
