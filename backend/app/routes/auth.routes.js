@@ -8,7 +8,7 @@ const path = require("path");
 // Multer storage config
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    cb(null, "uploads/"); // ensure this folder exists
+    cb(null, path.join(__dirname, "..", "uploads")); // ✅ Absolute path to app/uploads // ensure this folder exists
   },
   filename: function (req, file, cb) {
     const uniqueName = Date.now() + "-" + file.originalname;

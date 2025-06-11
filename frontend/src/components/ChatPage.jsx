@@ -482,7 +482,7 @@ const ChatPage = () => {
                 style={{ maxHeight: 80, borderRadius: 8 }}
               />
               <Button variant="outline-danger" size="sm" onClick={() => setImageFile(null)}>
-                Remove
+                Remove  
               </Button>
             </div>
           )}

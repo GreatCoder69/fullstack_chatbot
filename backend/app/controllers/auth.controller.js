@@ -91,7 +91,7 @@ exports.updateUser = async (req, res) => {
 
       if (!isDefault && oldUrl.includes("/uploads/")) {
         const filename = oldUrl.split("/uploads/")[1];
-        const filePath = path.join(__dirname, "..", "..", "uploads", filename); // ✅ uploads is inside app
+        const filePath = path.join(__dirname, "..", "uploads", filename); // ✅ uploads is inside app
 
         // Confirm file exists before trying to delete
         if (fs.existsSync(filePath)) {

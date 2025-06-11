@@ -9,6 +9,7 @@ router.post("/chat", verifyToken, diskUpload.single("image"), chatController.add
 router.get("/chat/:subject", verifyToken, chatController.getChatBySubject);
 router.get("/chat", verifyToken, chatController.getAllChats); // ✅ Add verifyToken back
 router.post("/deletechat", verifyToken, chatController.deleteChatBySubject);
+router.get("/admin/users-chats", verifyToken, chatController.getAllUsersWithChats);
 
 // Export as a function to register with app
 module.exports = (app) => {
