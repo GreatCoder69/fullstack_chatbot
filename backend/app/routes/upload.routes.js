@@ -1,8 +1,8 @@
 const express = require("express");
 const router = express.Router();
-const upload = require("../middlewares/multer.config");
+const { diskUpload } = require("../middlewares/multer.config"); // ✅ Use diskUpload here
 
-router.post("/uploadimg", upload.single("image"), (req, res) => {
+router.post("/uploadimg", diskUpload.single("image"), (req, res) => {
   if (!req.file) {
     return res.status(400).json({ message: "No file uploaded" });
   }

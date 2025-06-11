@@ -1,15 +1,16 @@
 const multer = require("multer");
 const path = require("path");
+const fs = require("fs");
+
+const uploadDir = path.join(__dirname, "..", "uploads");
 
 // Create uploads folder if it doesn't exist
-const fs = require("fs");
-const uploadDir = path.join(__dirname, "..", "uploads");
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir);
 }
 
-// Configure storage
-const storage = multer.diskStorage({
+// Configure disk storage for saving files to the uploads folder
+const diskStorage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, uploadDir);
   },
@@ -19,15 +20,20 @@ const storage = multer.diskStorage({
   }
 });
 
-// Optional: file filter to accept only images
+// Optional: Accept only images
 const fileFilter = (req, file, cb) => {
   const ext = path.extname(file.originalname).toLowerCase();
-  if (ext !== ".jpg" && ext !== ".jpeg" && ext !== ".png") {
+  if (![".jpg", ".jpeg", ".png"].includes(ext)) {
     return cb(new Error("Only images are allowed"), false);
   }
   cb(null, true);
 };
 
-const upload = multer({ storage, fileFilter });
+// Export both disk and memory uploads
+const diskUpload = multer({ storage: diskStorage, fileFilter });
+const memoryUpload = multer({ storage: multer.memoryStorage(), fileFilter });
 
-module.exports = upload;
+module.exports = {
+  diskUpload,   // For /uploadimg — saves to disk
+  memoryUpload  // For /chat — image buffer in memory (for Gemini)
+};

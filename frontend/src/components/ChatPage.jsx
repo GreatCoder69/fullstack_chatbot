@@ -97,13 +97,14 @@ const ChatPage = () => {
   };
 
   const handleSend = async () => {
-    if (!currentMessage.trim() || !selectedTopic) return;
+    if ((!currentMessage.trim() && !imageFile) || !selectedTopic) return;
 
     const userMsg = {
       sender: 'user',
-      message: currentMessage,
+      message: currentMessage || '📷 Image',
       timestamp: new Date().toISOString()
     };
+
     const newChat = [...chat, userMsg];
     setChat(newChat);
     setChatHistory((prev) => ({
@@ -113,19 +114,22 @@ const ChatPage = () => {
 
     reorderTopics(selectedTopic);
     setCurrentMessage('');
+    setImageFile(null); // Reset image file after send
 
     try {
+      const formData = new FormData();
+      formData.append('subject', selectedTopic);
+      if (currentMessage.trim()) formData.append('question', currentMessage);
+      if (imageFile) formData.append('image', imageFile);
+
       const res = await fetch('http://localhost:8080/api/chat', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'x-access-token': token
+          'x-access-token': token // ✅ Only token here, don't set 'Content-Type'
         },
-        body: JSON.stringify({
-          subject: selectedTopic,
-          question: userMsg.message
-        })
+        body: formData
       });
+
       const data = await res.json();
       const botMsg = {
         sender: 'bot',
@@ -139,9 +143,10 @@ const ChatPage = () => {
         [selectedTopic]: updatedChat
       }));
     } catch (err) {
-      console.error(err);
+      console.error('Upload or chat error:', err);
     }
   };
+
 
   const addTopic = () => {
     const topic = prompt('Enter topic name:');
@@ -247,10 +252,15 @@ const ChatPage = () => {
     formData.append('subject', selectedTopic);
 
     try {
-      const res = await fetch('http://localhost:5000/api/gemini', {
+      const res = await fetch('http://localhost:8080/api/chat', {
         method: 'POST',
+        headers: {
+          'x-access-token': token // ✅ Add this
+          // DO NOT set 'Content-Type' when using FormData
+        },
         body: formData
       });
+
 
       const data = await res.json();
       if (data && data.answer) {
