@@ -3,7 +3,6 @@ import { Card, Accordion, ListGroup, Image, Button } from 'react-bootstrap';
 
 const AdminPanel = () => {
   const [users, setUsers] = useState([]);
-  const [expandedUser, setExpandedUser] = useState(null);
   const [statusMap, setStatusMap] = useState({});
   const token = localStorage.getItem('token');
 
@@ -16,26 +15,30 @@ const AdminPanel = () => {
         const filtered = data.filter(user => user.chats && user.chats.length > 0);
         setUsers(filtered);
 
-        // Initialize status map from backend
         const map = {};
-        filtered.forEach(user => map[user.email] = user.isActive);
+        filtered.forEach(user => {
+          map[user.email] = user.isActive;
+        });
         setStatusMap(map);
       })
       .catch(console.error);
-  }, []);
+  }, [token]);
 
   const toggleStatus = (email) => {
     const newStatus = !statusMap[email];
-    fetch(`http://localhost:8080/api/admin/toggle-status`, {
+
+    fetch('http://localhost:8080/api/admin/toggle-status', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-access-token': token,
+        'x-access-token': token
       },
       body: JSON.stringify({ email, isActive: newStatus })
     }).then(res => {
       if (res.ok) {
         setStatusMap(prev => ({ ...prev, [email]: newStatus }));
+      } else {
+        console.error('Failed to toggle user status');
       }
     });
   };
@@ -47,7 +50,7 @@ const AdminPanel = () => {
       <Accordion alwaysOpen>
         {users.map((user, idx) => (
           <Accordion.Item key={idx} eventKey={idx.toString()}>
-            <Accordion.Header onClick={() => setExpandedUser(expandedUser === idx ? null : idx)}>
+            <Accordion.Header>
               <div className="d-flex align-items-center w-100">
                 <Image
                   src={user.profileimg}
