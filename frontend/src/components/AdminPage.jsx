@@ -3,7 +3,6 @@ import { Card, Accordion, ListGroup, Image, Button } from 'react-bootstrap';
 
 const AdminPanel = () => {
   const [users, setUsers] = useState([]);
-  const [statusMap, setStatusMap] = useState({});
   const token = localStorage.getItem('token');
 
   useEffect(() => {
@@ -14,18 +13,12 @@ const AdminPanel = () => {
       .then(data => {
         const filtered = data.filter(user => user.chats && user.chats.length > 0);
         setUsers(filtered);
-
-        const map = {};
-        filtered.forEach(user => {
-          map[user.email] = user.isActive;
-        });
-        setStatusMap(map);
       })
       .catch(console.error);
   }, [token]);
 
-  const toggleStatus = (email) => {
-    const newStatus = !statusMap[email];
+  const toggleStatus = (email, currentStatus) => {
+    const newStatus = !currentStatus;
 
     fetch('http://localhost:8080/api/admin/toggle-status', {
       method: 'POST',
@@ -34,13 +27,18 @@ const AdminPanel = () => {
         'x-access-token': token
       },
       body: JSON.stringify({ email, isActive: newStatus })
-    }).then(res => {
-      if (res.ok) {
-        setStatusMap(prev => ({ ...prev, [email]: newStatus }));
-      } else {
-        console.error('Failed to toggle user status');
-      }
-    });
+    })
+      .then(res => {
+        if (res.ok) {
+          setUsers(prev =>
+            prev.map(user =>
+              user.email === email ? { ...user, isActive: newStatus } : user
+            )
+          );
+        } else {
+          console.error('Failed to toggle user status');
+        }
+      });
   };
 
   return (
@@ -65,12 +63,18 @@ const AdminPanel = () => {
                   <div className="fw-bold">{user.name}</div>
                   <small className="text-muted">{user.email}</small>
                 </div>
-                <Button
-                  onClick={() => toggleStatus(user.email)}
-                  variant={statusMap[user.email] ? 'success' : 'danger'}
+                {/* prevent button click from toggling accordion */}
+                <div
+                  onClick={(e) => e.stopPropagation()}
+                  onFocus={(e) => e.stopPropagation()}
                 >
-                  {statusMap[user.email] ? 'Active' : 'Blocked'}
-                </Button>
+                  <Button
+                    onClick={() => toggleStatus(user.email, user.isActive)}
+                    variant={user.isActive ? 'success' : 'danger'}
+                  >
+                    {user.isActive ? 'Active' : 'Blocked'}
+                  </Button>
+                </div>
               </div>
             </Accordion.Header>
 

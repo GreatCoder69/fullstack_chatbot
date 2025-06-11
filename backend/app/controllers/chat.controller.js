@@ -18,6 +18,7 @@ exports.getAllUsersWithChats = async (req, res) => {
         name: user.name,
         email: user.email,
         profileimg: user.profileimg,
+        isActive: user.isActive,
         chats: userChats.map(c => ({
           subject: c._id,
           history: c.chat
