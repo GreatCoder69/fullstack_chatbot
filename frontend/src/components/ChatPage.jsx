@@ -71,11 +71,12 @@ const ChatPage = () => {
           if (entry.question || entry.imageURL) {
             history[topic].push({
               sender: 'user',
-              message: entry.question || (entry.imageURL ? '📷 Image' : ''),
+              message: entry.question || '', // Always use the prompt if it exists
               image: entry.imageURL ? `http://localhost:8080${entry.imageURL}` : null,
               timestamp: entry.timestamp
             });
           }
+
 
           if (entry.answer) {
             history[topic].push({
