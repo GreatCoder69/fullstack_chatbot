@@ -31,9 +31,10 @@ exports.signin = async (req, res) => {
     // Find user by email (signin uses email + password)
     const user = await User.findOne({ email: req.body.email });
     if (!user) {
-      return res.status(404).send({ message: "User Not found." });
+      return res.status(404).send({ message: "User not found." });
     }
-    if (!user.isActive){
+
+    if (!user.isActive) {
       return res.status(403).send({ message: "Account is disabled by admin." });
     }
 
@@ -48,7 +49,7 @@ exports.signin = async (req, res) => {
     const token = jwt.sign(
       {
         id: user._id,
-        email: user.email  // ✅ Add email to the payload
+        email: user.email,
       },
       config.secret,
       {
@@ -58,17 +59,24 @@ exports.signin = async (req, res) => {
       }
     );
 
+    // ✅ Include isAdmin and isActive in the response
     res.status(200).send({
-      id: user._id,
-      name: user.name,
-      email: user.email,
       accessToken: token,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        isAdmin: user.isAdmin,
+        isActive: user.isActive
+      }
     });
+
   } catch (err) {
     console.error("Signin error:", err);
     res.status(500).send({ message: "Internal server error." });
   }
 };
+
 
 exports.updateUser = async (req, res) => {
   try {
@@ -141,15 +149,4 @@ exports.getMe = async (req, res) => {
   }
 };
 
-exports.toggleUserStatus = async (req, res) => {
-  const { email, isActive } = req.body;
-
-  const user = await User.findOne({ email });
-  if (!user) return res.status(404).send({ message: "User not found." });
-
-  user.isActive = isActive;
-  await user.save();
-
-  res.send({ message: `User ${isActive ? "enabled" : "disabled"}.` });
-};
 
