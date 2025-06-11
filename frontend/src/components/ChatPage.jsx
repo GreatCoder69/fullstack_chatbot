@@ -415,6 +415,18 @@ const ChatPage = () => {
 
 
         <div className="p-3 border-top">
+          {imageFile && (
+            <div className="mb-2 d-flex align-items-center gap-3">
+              <img
+                src={URL.createObjectURL(imageFile)}
+                alt="Preview"
+                style={{ maxHeight: 80, borderRadius: 8 }}
+              />
+              <Button variant="outline-danger" size="sm" onClick={() => setImageFile(null)}>
+                Remove
+              </Button>
+            </div>
+          )}
           <InputGroup>
             <Form.Control
               placeholder="Type a message..."
@@ -433,10 +445,10 @@ const ChatPage = () => {
               style={{ display: 'none' }}
               onChange={(e) => {
                 if (e.target.files[0]) {
-                  handleImageUpload(e.target.files[0]);
-                  e.target.value = ''; // reset input
+                  setImageFile(e.target.files[0]);
                 }
               }}
+
             />
             <Button
               variant="secondary"
@@ -445,7 +457,7 @@ const ChatPage = () => {
               +
             </Button>
 
-            <Button onClick={handleSend} disabled={!currentMessage.trim()}>
+            <Button onClick={handleSend} disabled={!currentMessage.trim() && !imageFile}>
               Send
             </Button>
           </InputGroup>
