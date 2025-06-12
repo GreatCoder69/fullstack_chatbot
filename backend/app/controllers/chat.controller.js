@@ -3,6 +3,7 @@ const path = require('path');
 const Chat = require("../models/chat.model");
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 const User = require("../models/user.model");
+const pdfParse = require('pdf-parse');
 
 exports.getAllUsersWithChats = async (req, res) => {
   try {
@@ -44,7 +45,7 @@ exports.addChat = async (req, res) => {
   console.log("Chat route hit, has file?", !!req.file, "has question?", !!question);
 
   if (!subject || (!question && !req.file) || !email) {
-    return res.status(400).send({ message: "Missing subject, question/image, or email" });
+    return res.status(400).send({ message: "Missing subject, question/image/pdf, or email" });
   }
 
   try {
@@ -52,31 +53,54 @@ exports.addChat = async (req, res) => {
     let imageUrl = null;
 
     if (req.file) {
-      const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
-      if (!allowedTypes.includes(req.file.mimetype)) {
+      const allowedTypes = [
+        'image/jpeg',
+        'image/png',
+        'image/webp',
+        'application/pdf'
+      ];
+
+      const mimeType = req.file.mimetype;
+      if (!allowedTypes.includes(mimeType)) {
         return res.status(400).send({ message: "Unsupported file type" });
       }
 
-      const filePath = req.file.path; // ✅ path to file on disk
-      imageUrl = `/uploads/${req.file.filename}`; // ✅ public path to serve later
+      const filePath = req.file.path;
+      imageUrl = `/uploads/${req.file.filename}`;
 
-      // ✅ Read image from disk
-      const imageBuffer = fs.readFileSync(filePath);
-      const base64Image = imageBuffer.toString("base64");
-      const mimeType = req.file.mimetype;
+      if (mimeType === 'application/pdf') {
+        // ✅ Extract text from PDF
+        const pdfBuffer = fs.readFileSync(filePath);
+        const parsed = await pdfParse(pdfBuffer);
+        const pdfText = parsed.text;
 
-      const parts = [{ inlineData: { data: base64Image, mimeType } }];
-      if (question) {
-        parts.push({ text: question });
+        const prompt = question
+          ? `${question}\n\nAlso, consider this PDF content:\n${pdfText}`
+          : `Please analyze this PDF content:\n${pdfText}`;
+
+        const result = await model.generateContent({
+          contents: [{ role: "user", parts: [{ text: prompt }] }]
+        });
+
+        answer = result.response.text();
+      } else {
+        // ✅ Handle image file
+        const imageBuffer = fs.readFileSync(filePath);
+        const base64Image = imageBuffer.toString("base64");
+
+        const parts = [{ inlineData: { data: base64Image, mimeType } }];
+        if (question) {
+          parts.push({ text: question });
+        }
+
+        const result = await model.generateContent({
+          contents: [{ role: "user", parts }]
+        });
+
+        answer = result.response.text();
       }
-
-      const result = await model.generateContent({
-        contents: [{ role: "user", parts }]
-      });
-
-      answer = result.response.text();
     } else {
-      // Text-only
+      // ✅ Text-only input
       const result = await model.generateContent({
         contents: [{ role: "user", parts: [{ text: question }] }]
       });
@@ -84,7 +108,6 @@ exports.addChat = async (req, res) => {
       answer = result.response.text();
     }
 
-    // Save chat to MongoDB
     const chatEntry = {
       question: question || null,
       imageUrl: imageUrl || null,
@@ -101,9 +124,9 @@ exports.addChat = async (req, res) => {
       { upsert: true, new: true }
     );
 
-    res.status(200).json({ answer, image: imageUrl });
+    res.status(200).json({ answer, file: imageUrl });
   } catch (err) {
-    console.error("Gemini direct API error:", err);
+    console.error("Gemini PDF/Image/Text error:", err);
     res.status(500).send({ message: "Failed to generate response from Gemini" });
   }
 };

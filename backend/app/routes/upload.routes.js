@@ -4,7 +4,7 @@ const path = require("path");
 const { diskUpload } = require("../middlewares/multer.config");
 
 // POST /api/uploadimg
-router.post("/uploadimg", diskUpload.single("image"), (req, res) => {
+router.post("/uploadimg", diskUpload.single("pdf"), (req, res) => {
   if (!req.file) {
     return res.status(400).json({ message: "No file uploaded" });
   }

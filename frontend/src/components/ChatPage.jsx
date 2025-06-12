@@ -476,13 +476,28 @@ const ChatPage = () => {
         <div className="p-3 border-top">
           {imageFile && (
             <div className="mb-2 d-flex align-items-center gap-3">
-              <img
-                src={URL.createObjectURL(imageFile)}
-                alt="Preview"
-                style={{ maxHeight: 80, borderRadius: 8 }}
-              />
+              {imageFile.type === 'application/pdf' ? (
+                <>
+                  <span style={{ fontSize: 32 }}>📄</span>
+                  <span style={{ fontWeight: 'bold' }}>{imageFile.name}</span>
+                  <a
+                    href={URL.createObjectURL(imageFile)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ marginLeft: 8 }}
+                  >
+                    Preview
+                  </a>
+                </>
+              ) : (
+                <img
+                  src={URL.createObjectURL(imageFile)}
+                  alt="Preview"
+                  style={{ maxHeight: 80, borderRadius: 8 }}
+                />
+              )}
               <Button variant="outline-danger" size="sm" onClick={() => setImageFile(null)}>
-                Remove  
+                Remove
               </Button>
             </div>
           )}
@@ -499,7 +514,7 @@ const ChatPage = () => {
             {/* Image Upload Button */}
             <input
               type="file"
-              accept="image/*"
+              accept="image/*,application/pdf"
               id="image-upload"
               style={{ display: 'none' }}
               onChange={(e) => {
