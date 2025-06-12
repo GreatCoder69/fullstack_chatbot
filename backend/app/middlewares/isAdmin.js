@@ -9,12 +9,13 @@ const isAdmin = async (req, res, next) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    if (user.role === 'admin') {
-      next(); // user is admin, proceed
+    if (user.isAdmin === true) {
+      next(); // ✅ user is admin, proceed
     } else {
-      return res.status(403).json({ message: "Require Admin Role!" });
+      return res.status(403).json({ message: "Require Admin Access!" });
     }
   } catch (err) {
+    console.error("isAdmin error:", err);
     return res.status(500).json({ message: "Server error" });
   }
 };

@@ -1,8 +1,20 @@
 import React, { useEffect, useState } from 'react';
-import { Card, Accordion, ListGroup, Image, Button } from 'react-bootstrap';
+import {
+  Card, Accordion, ListGroup, Image, Button, Modal, Form, Alert
+} from 'react-bootstrap';
 
 const AdminPanel = () => {
   const [users, setUsers] = useState([]);
+  const [showModal, setShowModal] = useState(false);
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [formData, setFormData] = useState({
+    email: '',
+    name: '',
+    phone: '',
+    password: '',
+    profileimg: null
+  });
+  const [message, setMessage] = useState('');
   const token = localStorage.getItem('token');
 
   useEffect(() => {
@@ -41,6 +53,61 @@ const AdminPanel = () => {
       });
   };
 
+  const openEditModal = async (email) => {
+    const res = await fetch(`http://localhost:8080/api/admin/user?email=${email}`, {
+      headers: { 'x-access-token': token }
+    });
+    const data = await res.json();
+    setFormData({
+      email: data.email,
+      name: data.name || '',
+      phone: data.phone || '',
+      password: '',
+      profileimg: null
+    });
+    setSelectedUser(email);
+    setShowModal(true);
+    setMessage('');
+  };
+
+  const handleInputChange = (e) => {
+    const { name, value, files } = e.target;
+    if (name === 'profileimg') {
+      setFormData(prev => ({ ...prev, profileimg: files[0] }));
+    } else {
+      setFormData(prev => ({ ...prev, [name]: value }));
+    }
+  };
+
+  const handleFormSubmit = async (e) => {
+    e.preventDefault();
+    const form = new FormData();
+    form.append('email', formData.email);
+    form.append('name', formData.name);
+    form.append('phone', formData.phone);
+    if (formData.password) form.append('password', formData.password);
+    if (formData.profileimg) form.append('profileimg', formData.profileimg);
+
+    const res = await fetch('http://localhost:8080/api/admin/user', {
+      method: 'PUT',
+      headers: {
+        'x-access-token': token
+      },
+      body: form
+    });
+
+    const result = await res.json();
+    if (res.ok) {
+      setMessage('✅ Profile updated successfully!');
+      setTimeout(() => {
+        setShowModal(false);
+        setMessage('');
+      }, 1500);
+    } else {
+      setMessage(`❌ Error: ${result.message || 'Update failed'}`);
+    }
+  };
+
   return (
     <div className="container py-4">
       <h2 className="mb-4">Admin – User Activity Logs</h2>
@@ -63,16 +130,22 @@ const AdminPanel = () => {
                   <div className="fw-bold">{user.name}</div>
                   <small className="text-muted">{user.email}</small>
                 </div>
-                {/* prevent button click from toggling accordion */}
                 <div
                   onClick={(e) => e.stopPropagation()}
                   onFocus={(e) => e.stopPropagation()}
+                  className="d-flex gap-2"
                 >
                   <Button
                     onClick={() => toggleStatus(user.email, user.isActive)}
                     variant={user.isActive ? 'success' : 'danger'}
                   >
                     {user.isActive ? 'Active' : 'Blocked'}
+                  </Button>
+                  <Button
+                    variant="warning"
+                    onClick={() => openEditModal(user.email)}
+                  >
+                    Edit Profile
                   </Button>
                 </div>
               </div>
@@ -103,6 +176,38 @@ const AdminPanel = () => {
           </Accordion.Item>
         ))}
       </Accordion>
+
+      {/* Edit Profile Modal */}
+      <Modal show={showModal} onHide={() => setShowModal(false)}>
+        <Modal.Header closeButton>
+          <Modal.Title>Edit User Profile</Modal.Title>
+        </Modal.Header>
+        <Form onSubmit={handleFormSubmit} encType="multipart/form-data">
+          <Modal.Body>
+            {message && <Alert variant="info">{message}</Alert>}
+            <Form.Group className="mb-3">
+              <Form.Label>Name</Form.Label>
+              <Form.Control name="name" value={formData.name} onChange={handleInputChange} />
+            </Form.Group>
+            <Form.Group className="mb-3">
+              <Form.Label>Phone</Form.Label>
+              <Form.Control name="phone" value={formData.phone} onChange={handleInputChange} />
+            </Form.Group>
+            <Form.Group className="mb-3">
+              <Form.Label>Password (leave blank to keep unchanged)</Form.Label>
+              <Form.Control name="password" type="password" value={formData.password} onChange={handleInputChange} />
+            </Form.Group>
+            <Form.Group className="mb-3">
+              <Form.Label>Profile Image</Form.Label>
+              <Form.Control name="profileimg" type="file" onChange={handleInputChange} />
+            </Form.Group>
+          </Modal.Body>
+          <Modal.Footer>
+            <Button type="submit" variant="primary">Update</Button>
+            <Button variant="secondary" onClick={() => setShowModal(false)}>Cancel</Button>
+          </Modal.Footer>
+        </Form>
+      </Modal>
     </div>
   );
 };
