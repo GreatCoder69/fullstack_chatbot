@@ -4,7 +4,7 @@ import LoginPage from './components/LoginPage';
 import SignupPage from './components/SignupPage';
 import ChatPage from './components/ChatPage';
 import AdminPage from './components/AdminPage';
-
+import ChatHistory from './components/ChatHistory';
 const App = () => (
   <Routes>
     <Route path="/" element={<Navigate to="/login" />} />
@@ -12,6 +12,7 @@ const App = () => (
     <Route path="/signup" element={<SignupPage />} />
     <Route path="/chat" element={<ChatPage />} />
     <Route path="/admin" element={<AdminPage />} />
+    <Route path="/history" element={<ChatHistory />} />
   </Routes>
 );
 

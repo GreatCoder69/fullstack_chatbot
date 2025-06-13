@@ -28,6 +28,7 @@ exports.getAllUsersWithChats = async (req, res) => {
       return {
         name: user.name,
         email: user.email,
+        phone: user.phone, // ✅ Added phone here
         profileimg: user.profileimg,
         isActive: user.isActive,
         chats: userChats.map(c => ({

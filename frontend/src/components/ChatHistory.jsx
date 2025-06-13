@@ -1,13 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import {
-  Table, Image, Button, Modal, Form, Dropdown
+  Table, Image, Button, Modal, Form, Dropdown, Accordion, Card, ListGroup, Alert
 } from 'react-bootstrap';
 import {
-  FaBars, FaHome, FaTable, FaUser, FaCog, FaSignOutAlt
+  FaBars, FaHome, FaTable, FaUser, FaCog
 } from 'react-icons/fa';
-import './adminstyle.css'; // You'll define styles here
-import { useNavigate } from "react-router-dom";
-
+import './adminstyle.css';
+import { useNavigate } from 'react-router-dom';
 
 const AdminPanel = () => {
   const [users, setUsers] = useState([]);
@@ -21,12 +20,6 @@ const AdminPanel = () => {
   const token = localStorage.getItem('token');
   const navigate = useNavigate();
 
-  const handleSignOut = () => {
-    // Optionally clear tokens, etc.
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    navigate('/login');
-  }
   useEffect(() => {
     fetch('http://localhost:8080/api/admin/users-chats', {
       headers: { 'x-access-token': token }
@@ -67,7 +60,7 @@ const AdminPanel = () => {
       email: data.email,
       name: data.name || '',
       phone: data.phone || '',
-      password: data.password || '',
+      password: '',
       profileimg: null
     });
     setSelectedUser(email);
@@ -97,18 +90,22 @@ const AdminPanel = () => {
       body: form
     });
 
+    const result = await res.json();
     if (res.ok) {
       setMessage('✅ Profile updated!');
       setTimeout(() => setShowModal(false), 1500);
     } else {
-      const result = await res.json();
       setMessage(`❌ ${result.message || 'Update failed'}`);
     }
   };
 
+  const handleSignOut = () => {
+    localStorage.removeItem('token');
+    navigate('/login');
+  };
+
   return (
     <div className={`admin-panel ${sidebarOpen ? 'sidebar-open' : ''}`}>
-      {/* Sidebar */}
       <aside className={`sidebar ${sidebarOpen ? 'open' : ''}`}>
         <div className="sidebar-header">
           <h4 className="purple-logo">💜 Purple</h4>
@@ -121,7 +118,6 @@ const AdminPanel = () => {
         </ul>
       </aside>
 
-      {/* Main Content */}
       <main className="main-content">
         <header className="topbar">
           <Button variant="light" className="burger" onClick={() => setSidebarOpen(!sidebarOpen)}>
@@ -139,73 +135,71 @@ const AdminPanel = () => {
               <span className="ms-2">admin</span>
             </Dropdown.Toggle>
             <Dropdown.Menu>
-              <Dropdown.Item onClick={handleSignOut}>
-                Sign Out
-              </Dropdown.Item>
+              <Dropdown.Item onClick={handleSignOut}>Sign Out</Dropdown.Item>
             </Dropdown.Menu>
           </Dropdown>
         </header>
-        <div className="d-flex justify-content-center pt-4" style={{ width: '100%' }}>
-          <div className="table-container" style={{ padding: 0, width: '90%', marginTop:'5%'}}>
-            <Table className="user-table text-center">
-              <thead>
-                <tr>
-                  <th>User</th>
-                  <th>Name</th>
-                  <th>Email</th>
-                  <th>Status</th>
-                  <th>Edit</th>
-                </tr>
-              </thead>
-              <tbody>
-                {users.map((user, idx) => (
-                  <tr key={user.email} className={idx % 2 === 0 ? 'even' : 'odd'}>
-                    <td onClick={() => openEditModal(user.email)} style={{ cursor: 'pointer' }}>
-                      <Image src={user.profileimg} roundedCircle width={40} height={40} />
-                    </td>
-                    <td onClick={() => openEditModal(user.email)}>{user.name}</td>
-                    <td onClick={() => openEditModal(user.email)}>{user.email}</td>
-                    <td>
-                      <Button
-                        size="sm"
-                        style={{
-                          backgroundColor: user.isActive ? 'green' : '#dc3545',
-                          border: 'none'
-                        }}
-                        onClick={() => toggleStatus(user.email, user.isActive)}
-                      >
-                        {user.isActive ? 'Active' : 'Blocked'}
-                      </Button>
-                    </td>
-                    <td>
-                      <Button
-                        variant="outline-dark"
-                        size="sm"
-                        onClick={() => openEditModal(user.email)}
-                      >
-                        Edit
-                      </Button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </Table>
-          </div>
+
+        <div className="table-container px-4 mt-5">
+          <Accordion alwaysOpen>
+            {users.map((user, idx) => (
+              <Accordion.Item key={idx} eventKey={idx.toString()}>
+                <Accordion.Header>
+                  <Image
+                    src={user.profileimg}
+                    roundedCircle
+                    width={40}
+                    height={40}
+                    className="me-3"
+                  />
+                  <span className="fw-bold">{user.name}</span>
+                </Accordion.Header>
+                <Accordion.Body>
+                  {user.chats.map((chat, i) => (
+                    <Card className="mb-3" key={i}>
+                      <Card.Header><strong>Subject:</strong> {chat.subject}</Card.Header>
+                      <ListGroup variant="flush">
+                        {chat.history.map((entry, j) => (
+                          <ListGroup.Item key={j}>
+                            {entry.question && <p><strong>Q:</strong> {entry.question}</p>}
+                            <p><strong>A:</strong> {entry.answer}</p>
+                            {entry.imageUrl && (
+                              entry.imageUrl.toLowerCase().endsWith('.pdf') ? (
+                                <div className="d-flex align-items-center gap-2">
+                                  <span style={{ fontSize: 24 }}>📄</span>
+                                  <a
+                                    href={`http://localhost:8080${entry.imageUrl}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    style={{ fontWeight: 'bold' }}
+                                  >
+                                    {entry.imageUrl.split('/').pop()}
+                                  </a>
+                                </div>
+                              ) : (
+                                <img
+                                  src={`http://localhost:8080${entry.imageUrl}`}
+                                  alt="chat"
+                                  style={{ maxWidth: 200, borderRadius: 8 }}
+                                />
+                              )
+                            )}
+                          </ListGroup.Item>
+                        ))}
+                      </ListGroup>
+                    </Card>
+                  ))}
+                </Accordion.Body>
+              </Accordion.Item>
+            ))}
+          </Accordion>
         </div>
       </main>
 
-      {/* Modal */}
       <Modal show={showModal} onHide={() => setShowModal(false)} centered>
-        <Modal.Body className="p-5">
-          <div className="text-center mb-4">
-            <img
-              src="https://cdn-icons-png.flaticon.com/512/4712/4712109.png"
-              width={50}
-              height={50}
-              alt="avatar"
-            />
-            <h5>Edit User</h5>
-          </div>
+        <Modal.Body className="p-4">
+          <h5 className="text-center mb-3">Edit User</h5>
+          {message && <Alert variant="info">{message}</Alert>}
           <Form onSubmit={handleFormSubmit}>
             <Form.Group className="mb-3">
               <Form.Label>Name</Form.Label>
@@ -217,26 +211,15 @@ const AdminPanel = () => {
             </Form.Group>
             <Form.Group className="mb-3">
               <Form.Label>Password</Form.Label>
-              <Form.Control type="password" name="password" value={formData.password} onChange={handleInputChange} />
+              <Form.Control name="password" type="password" value={formData.password} onChange={handleInputChange} />
             </Form.Group>
-            <Form.Group className="mb-4">
+            <Form.Group className="mb-3">
               <Form.Label>Profile Image</Form.Label>
-              <Form.Control type="file" name="profileimg" onChange={handleInputChange} />
+              <Form.Control name="profileimg" type="file" onChange={handleInputChange} />
             </Form.Group>
             <div className="d-grid gap-2">
-              <Button
-                type="submit"
-                className="btn-purple"
-              >
-                Save Changes
-              </Button>
-              <Button
-                variant="light"
-                className="btn-cancel"
-                onClick={() => setShowModal(false)}
-              >
-                Cancel
-              </Button>
+              <Button type="submit" className="btn-purple">Save Changes</Button>
+              <Button variant="light" onClick={() => setShowModal(false)}>Cancel</Button>
             </div>
           </Form>
         </Modal.Body>
@@ -244,6 +227,5 @@ const AdminPanel = () => {
     </div>
   );
 };
-
 
 export default AdminPanel;
