@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import {
-  Table, Image, Button, Modal, Form, Alert
+  Card, Accordion, ListGroup, Image, Button, Modal, Form, Alert
 } from 'react-bootstrap';
 
 const AdminPanel = () => {
@@ -31,6 +31,7 @@ const AdminPanel = () => {
 
   const toggleStatus = (email, currentStatus) => {
     const newStatus = !currentStatus;
+
     fetch('http://localhost:8080/api/admin/toggle-status', {
       method: 'POST',
       headers: {
@@ -89,7 +90,9 @@ const AdminPanel = () => {
 
     const res = await fetch('http://localhost:8080/api/admin/user', {
       method: 'PUT',
-      headers: { 'x-access-token': token },
+      headers: {
+        'x-access-token': token
+      },
       body: form
     });
 
@@ -108,64 +111,90 @@ const AdminPanel = () => {
   return (
     <div className="container py-4">
       <h2 className="mb-4">Admin – User Activity Logs</h2>
-      <div className="table-responsive">
-        <Table bordered hover className="align-middle text-center shadow-sm">
-          <thead className="table-light">
-            <tr>
-              <th>User</th>
-              <th>Name</th>
-              <th>Phone</th>
-              <th>Email</th>
-              <th>Password</th>
-              <th>Status</th>
-              <th>Edit</th>
-            </tr>
-          </thead>
-          <tbody>
-            {users.map((user, idx) => (
-              <tr key={idx}>
-                <td onClick={() => openEditModal(user.email)} style={{ cursor: 'pointer' }}>
-                  <Image
-                    src={user.profileimg}
-                    roundedCircle
-                    width={40}
-                    height={40}
-                    style={{ objectFit: "cover", border: "1px solid #ccc" }}
-                    alt="Profile"
-                  />
-                </td>
-                <td onClick={() => openEditModal(user.email)}>{user.name}</td>
-                <td onClick={() => openEditModal(user.email)}>{user.phone}</td>
-                <td onClick={() => openEditModal(user.email)}>{user.email}</td>
-                <td onClick={() => openEditModal(user.email)}>{'●●●●●●●●'}</td>
-                <td>
+
+      <Accordion alwaysOpen>
+        {users.map((user, idx) => (
+          <Accordion.Item key={idx} eventKey={idx.toString()}>
+            <Accordion.Header>
+              <div className="d-flex align-items-center w-100">
+                <Image
+                  src={user.profileimg}
+                  roundedCircle
+                  width={40}
+                  height={40}
+                  alt="profile"
+                  className="me-3"
+                  style={{ objectFit: "cover", border: "1px solid #ccc" }}
+                />
+                <div className="me-auto">
+                  <div className="fw-bold">{user.name}</div>
+                  <small className="text-muted">{user.email}</small>
+                </div>
+                <div
+                  onClick={(e) => e.stopPropagation()}
+                  onFocus={(e) => e.stopPropagation()}
+                  className="d-flex gap-2"
+                >
                   <Button
                     onClick={() => toggleStatus(user.email, user.isActive)}
                     variant={user.isActive ? 'success' : 'danger'}
-                    size="sm"
                   >
                     {user.isActive ? 'Active' : 'Blocked'}
                   </Button>
-                </td>
-                <td>
                   <Button
                     variant="warning"
-                    size="sm"
                     onClick={() => openEditModal(user.email)}
                   >
-                    Edit
+                    Edit Profile
                   </Button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </Table>
-      </div>
+                </div>
+              </div>
+            </Accordion.Header>
 
-      {/* Edit Modal */}
+            <Accordion.Body>
+              {user.chats.map((chat, i) => (
+                <Card className="mb-3" key={i}>
+                  <Card.Header><strong>Subject:</strong> {chat.subject}</Card.Header>
+                  <ListGroup variant="flush">
+                    {chat.history.map((entry, j) => (
+                      <ListGroup.Item key={j}>
+                        {entry.question && <p><strong>Q:</strong> {entry.question}</p>}
+                        <p><strong>A:</strong> {entry.answer}</p>
+                        {entry.imageUrl && (
+                          entry.imageUrl.toLowerCase().endsWith('.pdf') ? (
+                            <div className="d-flex align-items-center gap-2">
+                              <span style={{ fontSize: 24 }}>📄</span>
+                              <a
+                                href={`http://localhost:8080${entry.imageUrl}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                style={{ fontWeight: 'bold' }}
+                              >
+                                {entry.imageUrl.split('/').pop()}
+                              </a>
+                            </div>
+                          ) : (
+                            <img
+                              src={`http://localhost:8080${entry.imageUrl}`}
+                              alt="chat"
+                              style={{ maxWidth: 200, borderRadius: 8 }}
+                            />
+                          )
+                        )}
+                      </ListGroup.Item>
+                    ))}
+                  </ListGroup>
+                </Card>
+              ))}
+            </Accordion.Body>
+          </Accordion.Item>
+        ))}
+      </Accordion>
+
+      {/* Edit Profile Modal */}
       <Modal show={showModal} onHide={() => setShowModal(false)}>
         <Modal.Header closeButton>
-          <Modal.Title>Edit User</Modal.Title>
+          <Modal.Title>Edit User Profile</Modal.Title>
         </Modal.Header>
         <Form onSubmit={handleFormSubmit} encType="multipart/form-data">
           <Modal.Body>
@@ -179,7 +208,7 @@ const AdminPanel = () => {
               <Form.Control name="phone" value={formData.phone} onChange={handleInputChange} />
             </Form.Group>
             <Form.Group className="mb-3">
-              <Form.Label>Password (leave blank to keep)</Form.Label>
+              <Form.Label>Password (leave blank to keep unchanged)</Form.Label>
               <Form.Control name="password" type="password" value={formData.password} onChange={handleInputChange} />
             </Form.Group>
             <Form.Group className="mb-3">
@@ -188,8 +217,8 @@ const AdminPanel = () => {
             </Form.Group>
           </Modal.Body>
           <Modal.Footer>
+            <Button type="submit" variant="primary">Update</Button>
             <Button variant="secondary" onClick={() => setShowModal(false)}>Cancel</Button>
-            <Button type="submit" variant="primary">Save Changes</Button>
           </Modal.Footer>
         </Form>
       </Modal>

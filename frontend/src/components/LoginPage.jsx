@@ -43,7 +43,7 @@ const Login = () => {
               <img
                 src="/logo.png"
                 alt="logo"
-                style={{ height: '25vh', width: '25vh', marginBottom: '10px' }}
+                style={{ height: '15vh',  marginBottom: '20px' }}
               />
             </div>
             <h4>Hello! let's get started</h4>

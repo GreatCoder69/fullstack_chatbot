@@ -39,8 +39,8 @@ module.exports = (app) => {
 
   // 👇 Admin update any user's profile (with optional image)
   app.put(
-    "/api/admin/user",
-    [verifyToken, upload.single("profileimg")],
+    "/api/admin/user", upload.single("profileimg"),
+    verifyToken, 
     controller.adminUpdateUser
   );
 };
