@@ -111,10 +111,8 @@ const AdminPanel = () => {
           <h4 className="purple-logo">💜 Purple</h4>
         </div>
         <ul className="sidebar-nav">
-          <li><FaHome /> Dashboard</li>
-          <li><FaTable /> Tables</li>
-          <li><FaUser /> Users</li>
-          <li><FaCog /> Settings</li>
+          <li onClick={() => navigate('/admin')} style={{ cursor: 'pointer' }}>Dashboard</li>
+          <li onClick={() => navigate('/history')} style={{ cursor: 'pointer' }}>Chat History</li>
         </ul>
       </aside>
 
