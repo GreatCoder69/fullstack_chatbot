@@ -67,7 +67,7 @@ exports.getUserByEmail = async (req, res) => {
 
 exports.adminUpdateUser = async (req, res) => {
   try {
-    const { email, name, phone, password } = req.body;
+    const { email, name, phone, password } = req.BODY;
     const file = req.file;
 
     const user = await User.findOne({ email });

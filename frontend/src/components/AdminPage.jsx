@@ -161,11 +161,25 @@ const AdminPanel = () => {
                         {entry.question && <p><strong>Q:</strong> {entry.question}</p>}
                         <p><strong>A:</strong> {entry.answer}</p>
                         {entry.imageUrl && (
-                          <img
-                            src={`http://localhost:8080${entry.imageUrl}`}
-                            alt="chat"
-                            style={{ maxWidth: 200, borderRadius: 8 }}
-                          />
+                          entry.imageUrl.toLowerCase().endsWith('.pdf') ? (
+                            <div className="d-flex align-items-center gap-2">
+                              <span style={{ fontSize: 24 }}>📄</span>
+                              <a
+                                href={`http://localhost:8080${entry.imageUrl}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                style={{ fontWeight: 'bold' }}
+                              >
+                                {entry.imageUrl.split('/').pop()}
+                              </a>
+                            </div>
+                          ) : (
+                            <img
+                              src={`http://localhost:8080${entry.imageUrl}`}
+                              alt="chat"
+                              style={{ maxWidth: 200, borderRadius: 8 }}
+                            />
+                          )
                         )}
                       </ListGroup.Item>
                     ))}
