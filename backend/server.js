@@ -43,6 +43,7 @@ require('./app/routes/auth.routes')(app);
 require('./app/routes/user.routes')(app);
 require("./app/routes/chat.routes")(app);
 require("./app/routes/admin.routes")(app);
+require("./app/routes/log.routes")(app);
 // ✅ Upload route
 const uploadRoutes = require("./app/routes/upload.routes");
 app.use("/api", uploadRoutes);

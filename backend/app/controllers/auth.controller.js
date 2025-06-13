@@ -1,6 +1,7 @@
 const config = require("../config/auth.config");
 const db = require("../models");
 const User = db.user;
+const logEvent = require("../utils/logEvent");
 
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
@@ -14,10 +15,17 @@ exports.signup = async (req, res) => {
       phone: req.body.phone,
       email: req.body.email,
       password: bcrypt.hashSync(req.body.password, 8),
-      profileimg: "https://www.shutterstock.com/image-vector/vector-flat-illustration-grayscale-avatar-600nw-2281862025.jpg", // ✅ Default profile image
+      profileimg: "https://www.shutterstock.com/image-vector/vector-flat-illustration-grayscale-avatar-600nw-2281862025.jpg",
     });
 
     await user.save();
+
+    await logEvent({
+      email: req.body.email,
+      action: "signup",
+      message: "User registered",
+    });
+
     res.status(201).send({ message: "User was registered successfully!" });
   } catch (err) {
     console.error("Signup error:", err);
@@ -28,7 +36,6 @@ exports.signup = async (req, res) => {
 
 exports.signin = async (req, res) => {
   try {
-    // Find user by email (signin uses email + password)
     const user = await User.findOne({ email: req.body.email });
     if (!user) {
       return res.status(404).send({ message: "User not found." });
@@ -47,19 +54,18 @@ exports.signin = async (req, res) => {
     }
 
     const token = jwt.sign(
-      {
-        id: user._id,
-        email: user.email,
-      },
+      { id: user._id, email: user.email },
       config.secret,
-      {
-        algorithm: "HS256",
-        allowInsecureKeySizes: true,
-        expiresIn: 86400, // 24 hours
-      }
+      { algorithm: "HS256", allowInsecureKeySizes: true, expiresIn: 86400 }
     );
 
-    // ✅ Include isAdmin and isActive in the response
+    await logEvent({
+      email: user.email,
+      action: "login",
+      message: "User logged in",
+      meta: { ip: req.ip }
+    });
+
     res.status(200).send({
       accessToken: token,
       user: {
@@ -77,7 +83,6 @@ exports.signin = async (req, res) => {
   }
 };
 
-
 exports.updateUser = async (req, res) => {
   try {
     const { email, name, phone, password } = req.body;
@@ -92,9 +97,13 @@ exports.updateUser = async (req, res) => {
       return res.status(404).send({ message: "User not found." });
     }
 
-    if (name) user.name = name;
-    if (phone) user.phone = phone;
-    if (password) user.password = bcrypt.hashSync(password, 8);
+    const updates = {};
+    if (name) { user.name = name; updates.name = name; }
+    if (phone) { user.phone = phone; updates.phone = phone; }
+    if (password) {
+      user.password = bcrypt.hashSync(password, 8);
+      updates.password = '***';
+    }
 
     if (file) {
       const oldUrl = user.profileimg;
@@ -102,9 +111,7 @@ exports.updateUser = async (req, res) => {
 
       if (!isDefault && oldUrl.includes("/uploads/")) {
         const filename = oldUrl.split("/uploads/")[1];
-        const filePath = path.join(__dirname, "..", "uploads", filename); // ✅ uploads is inside app
-
-        // Confirm file exists before trying to delete
+        const filePath = path.join(__dirname, "..", "uploads", filename);
         if (fs.existsSync(filePath)) {
           fs.unlink(filePath, (err) => {
             if (err) console.error("❌ Failed to delete old image:", err);
@@ -115,11 +122,19 @@ exports.updateUser = async (req, res) => {
         }
       }
 
-      // Save new profile image URL
-      user.profileimg = `http://localhost:8080/uploads/${file.filename}`;
+      const newImg = `http://localhost:8080/uploads/${file.filename}`;
+      user.profileimg = newImg;
+      updates.profileimg = newImg;
     }
 
     await user.save();
+
+    await logEvent({
+      email,
+      action: "edit_profile",
+      message: "User updated profile",
+      meta: updates
+    });
 
     res.status(200).send({
       message: "User updated successfully.",

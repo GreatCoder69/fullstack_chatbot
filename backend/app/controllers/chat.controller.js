@@ -4,6 +4,7 @@ const Chat = require("../models/chat.model");
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 const User = require("../models/user.model");
 const pdfParse = require('pdf-parse');
+const logEvent = require("../utils/logEvent");
 
 exports.getAllUsersWithChats = async (req, res) => {
   try {
@@ -123,6 +124,16 @@ exports.addChat = async (req, res) => {
       },
       { upsert: true, new: true }
     );
+    await logEvent({
+      email,
+      action: "create_chat",
+      message: `Chat message added to subject '${subject}'`,
+      meta: {
+        subject,
+        question: question || null,
+        file: imageUrl || null
+      }
+    });
 
     res.status(200).json({ answer, file: imageUrl });
   } catch (err) {
@@ -179,6 +190,14 @@ exports.deleteChatBySubject = async (req, res) => {
     if (result.deletedCount === 0) {
       return res.status(404).send({ message: "Chat not found or already deleted" });
     }
+
+    // ✅ Log the chat deletion
+    await logEvent({
+      email,
+      action: "chat_delete",
+      message: `Chat '${subject}' deleted by user`,
+      meta: { subject }
+    });
 
     res.status(200).send({ message: `Chat '${subject}' deleted successfully.` });
   } catch (err) {
