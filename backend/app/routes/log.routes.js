@@ -11,4 +11,6 @@ module.exports = (app) => {
 
   // 👉 Get logs by specific user (optional: can add admin protection later)
   app.get("/api/logs/:email", [verifyToken, isAdmin], controller.getLogsByUser);
+
+  app.get("/api/admin/user-logs", [verifyToken, isAdmin], controller.getLogsByEmailQuery);
 };

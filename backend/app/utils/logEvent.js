@@ -1,5 +1,6 @@
 // utils/logEvent.js
 const UserLog = require("../models/log.model");
+const isAdmin = require("../middlewares/isAdmin");
 
 const logEvent = async ({ email, action, message, meta = {} }) => {
   try {
