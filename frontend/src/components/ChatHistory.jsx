@@ -1,22 +1,18 @@
 import React, { useEffect, useState } from 'react';
 import {
-  Table, Image, Button, Modal, Form, Dropdown, Accordion, Card, ListGroup, Alert
+  Form, Button, Dropdown, Image, Alert, Card, Row, Col, Pagination
 } from 'react-bootstrap';
-import {
-  FaBars, FaHome, FaTable, FaUser, FaCog
-} from 'react-icons/fa';
-import './adminstyle.css';
+import { FaBars } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
+import './adminstyle.css';
 
 const AdminPanel = () => {
   const [users, setUsers] = useState([]);
-  const [showModal, setShowModal] = useState(false);
-  const [selectedUser, setSelectedUser] = useState(null);
+  const [filters, setFilters] = useState({ username: '', subject: '', startDate: '', endDate: '', fileType: '' });
+  const [showDateError, setShowDateError] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [formData, setFormData] = useState({
-    email: '', name: '', phone: '', password: '', profileimg: null
-  });
-  const [message, setMessage] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const messagesPerPage = 5;
   const token = localStorage.getItem('token');
   const navigate = useNavigate();
 
@@ -32,77 +28,64 @@ const AdminPanel = () => {
       .catch(console.error);
   }, [token]);
 
-  const toggleStatus = (email, currentStatus) => {
-    fetch('http://localhost:8080/api/admin/toggle-status', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-access-token': token
-      },
-      body: JSON.stringify({ email, isActive: !currentStatus })
-    }).then(res => {
-      if (res.ok) {
-        setUsers(prev =>
-          prev.map(user =>
-            user.email === email ? { ...user, isActive: !currentStatus } : user
-          )
-        );
-      }
-    });
-  };
-
-  const openEditModal = async (email) => {
-    const res = await fetch(`http://localhost:8080/api/admin/user?email=${email}`, {
-      headers: { 'x-access-token': token }
-    });
-    const data = await res.json();
-    setFormData({
-      email: data.email,
-      name: data.name || '',
-      phone: data.phone || '',
-      password: '',
-      profileimg: null
-    });
-    setSelectedUser(email);
-    setShowModal(true);
-    setMessage('');
-  };
-
-  const handleInputChange = (e) => {
-    const { name, value, files } = e.target;
-    if (name === 'profileimg') {
-      setFormData(prev => ({ ...prev, profileimg: files[0] }));
+  useEffect(() => {
+    if (filters.startDate && filters.endDate) {
+      const start = new Date(filters.startDate);
+      const end = new Date(filters.endDate);
+      setShowDateError(end < start);
     } else {
-      setFormData(prev => ({ ...prev, [name]: value }));
+      setShowDateError(false);
     }
-  };
-
-  const handleFormSubmit = async (e) => {
-    e.preventDefault();
-    const form = new FormData();
-    Object.entries(formData).forEach(([key, val]) => {
-      if (val) form.append(key, val);
-    });
-
-    const res = await fetch('http://localhost:8080/api/admin/user', {
-      method: 'PUT',
-      headers: { 'x-access-token': token },
-      body: form
-    });
-
-    const result = await res.json();
-    if (res.ok) {
-      setMessage('✅ Profile updated!');
-      setTimeout(() => setShowModal(false), 1500);
-    } else {
-      setMessage(`❌ ${result.message || 'Update failed'}`);
-    }
-  };
+  }, [filters.startDate, filters.endDate]);
 
   const handleSignOut = () => {
     localStorage.removeItem('token');
     navigate('/login');
   };
+
+  const applyFilters = (entry, user, chat) => {
+    const timestamp = new Date(entry.timestamp);
+    const start = filters.startDate ? new Date(filters.startDate) : null;
+    const end = filters.endDate ? new Date(new Date(filters.endDate).setHours(23, 59, 59, 999)) : null;
+    if (filters.username && !user.name.toLowerCase().includes(filters.username.toLowerCase())) return false;
+    if (filters.subject && !chat.subject.toLowerCase().includes(filters.subject.toLowerCase())) return false;
+    if (start && timestamp < start) return false;
+    if (end && timestamp > end) return false;
+    if (filters.fileType === 'image' && (!entry.imageUrl || entry.imageUrl.toLowerCase().endsWith('.pdf'))) return false;
+    if (filters.fileType === 'pdf' && (!entry.imageUrl || !entry.imageUrl.toLowerCase().endsWith('.pdf'))) return false;
+    if (filters.fileType === 'none' && entry.imageUrl) return false;
+    return true;
+  };
+
+  const allEntries = users.flatMap(user =>
+    user.chats.flatMap(chat =>
+      chat.history.filter(entry => applyFilters(entry, user, chat)).map(entry => ({
+        profileimg: user.profileimg,
+        name: user.name,
+        subject: chat.subject,
+        ...entry
+      }))
+    )
+  );
+
+  const totalPages = Math.ceil(allEntries.length / messagesPerPage);
+  const paginatedEntries = allEntries.slice((currentPage - 1) * messagesPerPage, currentPage * messagesPerPage);
+
+  const renderPagination = () => (
+    <Pagination className="justify-content-center mt-4">
+      <Pagination.First onClick={() => setCurrentPage(1)} disabled={currentPage === 1} />
+      <Pagination.Prev onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))} disabled={currentPage === 1} />
+      {[...Array(totalPages)].map((_, i) => (
+        <Pagination.Item
+          key={i}
+          active={i + 1 === currentPage}
+          onClick={() => setCurrentPage(i + 1)}
+        >{i + 1}</Pagination.Item>
+      ))}
+      <Pagination.Next onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))} disabled={currentPage === totalPages} />
+      <Pagination.Last onClick={() => setCurrentPage(totalPages)} disabled={currentPage === totalPages} />
+    </Pagination>
+  );
 
   return (
     <div className={`admin-panel ${sidebarOpen ? 'sidebar-open' : ''}`}>
@@ -111,10 +94,10 @@ const AdminPanel = () => {
           <h4 className="purple-logo">💜 Purple</h4>
         </div>
         <ul className="sidebar-nav">
-          <li onClick={() => navigate('/admin')} style={{ cursor: 'pointer' }}>Dashboard</li>
-          <li onClick={() => navigate('/history')} style={{ cursor: 'pointer' }}>Chat History</li>
-          <li onClick={() => navigate('/logs')} style={{ cursor: 'pointer' }}>User Logs</li>
-          <li onClick={() => navigate('/edit-profile')} style={{ cursor: 'pointer' }}>Edit Profile</li>
+          <li onClick={() => navigate('/admin')}>Dashboard</li>
+          <li onClick={() => navigate('/history')}>Chat History</li>
+          <li onClick={() => navigate('/logs')}>User Logs</li>
+          <li onClick={() => navigate('/edit-profile')}>Edit Profile</li>
         </ul>
       </aside>
 
@@ -123,14 +106,11 @@ const AdminPanel = () => {
           <Button variant="light" className="burger" onClick={() => setSidebarOpen(!sidebarOpen)}>
             <FaBars />
           </Button>
-
           <Dropdown className="admin-dropdown ms-auto">
             <Dropdown.Toggle variant="light" className="admin-toggle">
               <Image
                 src="https://www.shutterstock.com/editorial/image-editorial/M2T3Qc10N2zaIawbNzA0Nzg=/cole-palmer-chelsea-celebrates-scoring-his-fourth-440nw-14434919bx.jpg"
-                roundedCircle
-                width={40}
-                height={40}
+                roundedCircle width={40} height={40}
               />
               <span className="ms-2">admin</span>
             </Dropdown.Toggle>
@@ -140,90 +120,86 @@ const AdminPanel = () => {
           </Dropdown>
         </header>
 
-        <div className="table-container px-4 mt-5">
-          <Accordion alwaysOpen>
-            {users.map((user, idx) => (
-              <Accordion.Item key={idx} eventKey={idx.toString()}>
-                <Accordion.Header>
-                  <Image
-                    src={user.profileimg}
-                    roundedCircle
-                    width={40}
-                    height={40}
-                    className="me-3"
-                  />
-                  <span className="fw-bold">{user.name}</span>
-                </Accordion.Header>
-                <Accordion.Body>
-                  {user.chats.map((chat, i) => (
-                    <Card className="mb-3" key={i}>
-                      <Card.Header><strong>Subject:</strong> {chat.subject}</Card.Header>
-                      <ListGroup variant="flush">
-                        {chat.history.map((entry, j) => (
-                          <ListGroup.Item key={j}>
-                            {entry.question && <p><strong>Q:</strong> {entry.question}</p>}
-                            <p><strong>A:</strong> {entry.answer}</p>
-                            {entry.imageUrl && (
-                              entry.imageUrl.toLowerCase().endsWith('.pdf') ? (
-                                <div className="d-flex align-items-center gap-2">
-                                  <span style={{ fontSize: 24 }}>📄</span>
-                                  <a
-                                    href={`http://localhost:8080${entry.imageUrl}`}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    style={{ fontWeight: 'bold' }}
-                                  >
-                                    {entry.imageUrl.split('/').pop()}
-                                  </a>
-                                </div>
-                              ) : (
-                                <img
-                                  src={`http://localhost:8080${entry.imageUrl}`}
-                                  alt="chat"
-                                  style={{ maxWidth: 200, borderRadius: 8 }}
-                                />
-                              )
-                            )}
-                          </ListGroup.Item>
-                        ))}
-                      </ListGroup>
-                    </Card>
-                  ))}
-                </Accordion.Body>
-              </Accordion.Item>
-            ))}
-          </Accordion>
+        <div className="px-4 mt-4 d-flex gap-3 flex-wrap align-items-center">
+          <Form.Control
+            placeholder="Search by user name"
+            value={filters.username}
+            onChange={e => setFilters(prev => ({ ...prev, username: e.target.value }))}
+            style={{ maxWidth: 200 }}
+          />
+          <Form.Control
+            placeholder="Search by subject"
+            value={filters.subject}
+            onChange={e => setFilters(prev => ({ ...prev, subject: e.target.value }))}
+            style={{ maxWidth: 200 }}
+          />
+          <Form.Control
+            type="date"
+            value={filters.startDate}
+            onChange={e => setFilters(prev => ({ ...prev, startDate: e.target.value }))}
+          />
+          <Form.Control
+            type="date"
+            value={filters.endDate}
+            min={filters.startDate || ''}
+            onChange={e => setFilters(prev => ({ ...prev, endDate: e.target.value }))}
+          />
+          <Form.Select
+            value={filters.fileType}
+            onChange={e => setFilters(prev => ({ ...prev, fileType: e.target.value }))}
+            style={{ maxWidth: 150 }}
+          >
+            <option value="">File Type</option>
+            <option value="image">Image</option>
+            <option value="pdf">PDF</option>
+            <option value="none">No File</option>
+          </Form.Select>
         </div>
-      </main>
 
-      <Modal show={showModal} onHide={() => setShowModal(false)} centered>
-        <Modal.Body className="p-4">
-          <h5 className="text-center mb-3">Edit User</h5>
-          {message && <Alert variant="info">{message}</Alert>}
-          <Form onSubmit={handleFormSubmit}>
-            <Form.Group className="mb-3">
-              <Form.Label>Name</Form.Label>
-              <Form.Control name="name" value={formData.name} onChange={handleInputChange} />
-            </Form.Group>
-            <Form.Group className="mb-3">
-              <Form.Label>Phone</Form.Label>
-              <Form.Control name="phone" value={formData.phone} onChange={handleInputChange} />
-            </Form.Group>
-            <Form.Group className="mb-3">
-              <Form.Label>Password</Form.Label>
-              <Form.Control name="password" type="password" value={formData.password} onChange={handleInputChange} />
-            </Form.Group>
-            <Form.Group className="mb-3">
-              <Form.Label>Profile Image</Form.Label>
-              <Form.Control name="profileimg" type="file" onChange={handleInputChange} />
-            </Form.Group>
-            <div className="d-grid gap-2">
-              <Button type="submit" className="btn-purple">Save Changes</Button>
-              <Button variant="light" onClick={() => setShowModal(false)}>Cancel</Button>
-            </div>
-          </Form>
-        </Modal.Body>
-      </Modal>
+        {showDateError && (
+          <Alert variant="danger" className="mt-3 mx-4">
+            ❌ End date cannot be earlier than start date.
+          </Alert>
+        )}
+
+        <div className="mt-4 px-4">
+          {paginatedEntries.map((entry, idx) => (
+            <Card className="mb-4 w-100 shadow-sm" key={idx}>
+              <Card.Body>
+                <div className="d-flex align-items-center mb-2">
+                  <Image src={entry.profileimg} roundedCircle width={45} height={45} className="me-3" />
+                  <div>
+                    <strong>{entry.name}</strong><br />
+                    <small className="text-muted">{new Date(entry.timestamp).toLocaleString()}</small>
+                  </div>
+                </div>
+                <h6><strong>Subject:</strong> {entry.subject}</h6>
+                {entry.question && <p><strong>Q:</strong> {entry.question}</p>}
+                <p><strong>A:</strong> {entry.answer}</p>
+                {entry.imageUrl && (
+                  entry.imageUrl.toLowerCase().endsWith('.pdf') ? (
+                    <div className="d-flex align-items-center gap-2">
+                      <span style={{ fontSize: 20 }}>📄</span>
+                      <a href={`http://localhost:8080${entry.imageUrl}`} target="_blank" rel="noopener noreferrer">
+                        {entry.imageUrl.split('/').pop()}
+                      </a>
+                    </div>
+                  ) : (
+                    <img
+                      src={`http://localhost:8080${entry.imageUrl}`}
+                      alt="chat"
+                      style={{ height: '200px', objectFit: 'cover', borderRadius: 8 }}
+                    />
+
+                  )
+                )}
+              </Card.Body>
+            </Card>
+          ))}
+        </div>
+
+        {renderPagination()}
+      </main>
     </div>
   );
 };
