@@ -181,10 +181,11 @@ const AdminPanel = () => {
                       <Button
                         variant="outline-dark"
                         size="sm"
-                        onClick={() => openEditModal(user.email)}
+                        onClick={() => window.open(`/edit-user/${user.email}`, '_blank')}
                       >
                         Edit
                       </Button>
+
                     </td>
                   </tr>
                 ))}
