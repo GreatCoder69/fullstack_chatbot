@@ -3,7 +3,7 @@ import {
   Row, Col, Card, Table, Image, Button, Modal, Form, Dropdown
 } from 'react-bootstrap';
 import {
-  FaBars, FaHome, FaTable, FaUser, FaCog, FaSignOutAlt
+  FaBars
 } from 'react-icons/fa';
 import {
   BsGraphUp, BsBookmark, BsGem, BsPeople
@@ -32,7 +32,6 @@ const AdminDashboard = () => {
   });
   const [message, setMessage] = useState('');
 
-  // Stats
   const [totalUsers, setTotalUsers] = useState(0);
   const [noFileChats, setNoFileChats] = useState(0);
   const [imageChats, setImageChats] = useState(0);
@@ -46,44 +45,59 @@ const AdminDashboard = () => {
   };
 
   useEffect(() => {
+    fetch('http://localhost:8080/api/admin/summary', {
+      headers: { 'x-access-token': token }
+    })
+      .then(res => res.json())
+      .then(summary => {
+        setTotalUsers(summary.totalUsers || 0);
+        setNoFileChats(summary.chatsWithoutFiles || 0);
+        setImageChats(summary.chatsWithImages || 0);
+        setPdfChats(summary.chatsWithPDFs || 0);
+      })
+      .catch(console.error);
+
     fetch('http://localhost:8080/api/admin/users-chats', {
       headers: { 'x-access-token': token }
     })
       .then(res => res.json())
       .then(data => {
-        const filtered = data.filter(user => user.chats?.length > 0);
-        setUsers(filtered);
-        setTotalUsers(filtered.length);
+        const monthMap = {};
 
-        let noFile = 0, images = 0, pdfs = 0;
-        const monthlyStats = {};
-        months.forEach(m => {
-          monthlyStats[m] = { month: m, noFile: 0, withImage: 0, withPDF: 0 };
-        });
-
-        filtered.forEach(user => {
+        data.forEach(user => {
           user.chats.forEach(chat => {
-            chat.history.forEach(msg => {
-              const month = getMonth(msg.timestamp);
-              const url = msg.imageUrl;
-              if (!url) {
-                noFile++;
-                monthlyStats[month].noFile++;
-              } else if (url.endsWith('.jpg') || url.endsWith('.png')) {
-                images++;
-                monthlyStats[month].withImage++;
-              } else if (url.endsWith('.pdf')) {
-                pdfs++;
-                monthlyStats[month].withPDF++;
+            chat.history.forEach(message => {
+              const date = new Date(message.timestamp);
+              if (isNaN(date)) return;
+              const month = getMonth(date);
+
+              if (!monthMap[month]) {
+                monthMap[month] = { month, noFile: 0, withImage: 0, withPDF: 0 };
+              }
+
+              const imageUrl = message.imageUrl;
+
+              if (!imageUrl) {
+                monthMap[month].noFile += 1;
+              } else if (imageUrl.match(/\.(jpg|jpeg|png)$/i)) {
+                monthMap[month].withImage += 1;
+              } else if (imageUrl.match(/\.pdf$/i)) {
+                monthMap[month].withPDF += 1;
+              } else {
+                monthMap[month].noFile += 1;
               }
             });
           });
         });
 
-        setNoFileChats(noFile);
-        setImageChats(images);
-        setPdfChats(pdfs);
-        setChartData(months.map(m => monthlyStats[m]));
+        const finalData = months.map(month => monthMap[month] || {
+          month,
+          noFile: 0,
+          withImage: 0,
+          withPDF: 0
+        });
+
+        setChartData(finalData);
       })
       .catch(console.error);
   }, [token]);
@@ -185,10 +199,9 @@ const AdminDashboard = () => {
 
       {/* Main Content */}
       <main className="main-content flex-grow-1">
-        {/* Topbar */}
         <header
           className="d-flex justify-content-between align-items-center p-3 border-bottom bg-white"
-          style={{ position: 'sticky', top: 0, zIndex: 1000,marginTop: '-100px' }}
+          style={{ position: 'sticky', top: 0, zIndex: 1000, marginTop: '-100px' }}
         >
           <Button variant="light" onClick={() => setSidebarOpen(!sidebarOpen)}>
             <FaBars />
@@ -210,13 +223,8 @@ const AdminDashboard = () => {
         </header>
 
         <div className="p-4">
-          <h4 className="mb-4 mt-20">
-            <div style={{ marginTop: '60px' }}>
-              Welcome to Admin Dashboard
-            </div>
-          </h4>
+          <h4 className="mb-4 mt-20"><div style={{ marginTop: '60px' }}>Welcome to Admin Dashboard</div></h4>
 
-          {/* Stats Cards */}
           <Row>
             <Col md={3}><StatCard title="Total Users" value={totalUsers} subtitle="Unique users with chats" icon={BsPeople} bg={["#f093fb", "#f5576c"]} /></Col>
             <Col md={3}><StatCard title="Chats without Files" value={noFileChats} subtitle="Messages with no attachments" icon={BsBookmark} bg={["#5ee7df", "#b490ca"]} /></Col>
@@ -224,7 +232,6 @@ const AdminDashboard = () => {
             <Col md={3}><StatCard title="Chats with PDFs" value={pdfChats} subtitle=".pdf document messages" icon={BsGem} bg={["#30cfd0", "#330867"]} /></Col>
           </Row>
 
-          {/* Chart */}
           <h5 className="mt-5 mb-3">Monthly Chat Insights</h5>
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={chartData} barSize={10} margin={{ top: 20, right: 30, left: 0, bottom: 5 }}>
@@ -241,7 +248,7 @@ const AdminDashboard = () => {
         </div>
       </main>
 
-      {/* Modal */}
+      {/* Edit User Modal */}
       <Modal show={showModal} onHide={() => setShowModal(false)} centered>
         <Modal.Body className="p-5">
           <div className="text-center mb-4">

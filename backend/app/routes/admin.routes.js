@@ -37,6 +37,12 @@ module.exports = (app) => {
     controller.getUserByEmail
   );
 
+  app.get(
+    "/api/admin/summary",
+    [verifyToken, isAdmin],
+    controller.getAdminSummary
+  );
+
   // 👇 Admin update any user's profile (with optional image)
   app.put(
     "/api/admin/user", upload.single("profileimg"),

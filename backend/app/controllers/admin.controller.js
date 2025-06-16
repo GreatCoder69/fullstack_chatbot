@@ -2,6 +2,7 @@ const User = require("../models/user.model");
 const bcrypt = require("bcryptjs");
 const path = require("path");
 const fs = require("fs");
+const Chat = require('../models/chat.model'); 
 
 exports.toggleUserStatus = async (req, res) => {
   const { email, isActive } = req.body;
@@ -44,6 +45,48 @@ exports.getAllUsersWithChats = async (req, res) => {
     res.status(500).json({ message: "Error fetching user chats" });
   }
 };
+
+exports.getAdminSummary = async (req, res) => {
+  try {
+    const users = await User.find({});
+    const chats = await Chat.find({});
+    const totalUsers = users.length;
+
+    let totalChats = 0;
+    let chatsWithImages = 0;
+    let chatsWithPDFs = 0;
+    let chatsWithoutFiles = 0;
+
+    chats.forEach(chat => {
+      chat.chat.forEach(entry => {
+        totalChats++;
+
+        const imageUrl = entry.imageUrl;
+
+        if (!imageUrl) {
+          chatsWithoutFiles++;
+        } else if (imageUrl.toLowerCase().endsWith('.pdf')) {
+          chatsWithPDFs++;
+        } else {
+          chatsWithImages++;
+        }
+      });
+    });
+
+    res.json({
+      totalUsers,
+      totalChats,
+      chatsWithoutFiles,
+      chatsWithImages,
+      chatsWithPDFs
+    });
+
+  } catch (err) {
+    console.error('Error in getAdminSummary:', err);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+};
+
 
 exports.getUserByEmail = async (req, res) => {
   try {
