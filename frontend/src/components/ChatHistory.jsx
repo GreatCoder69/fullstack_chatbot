@@ -3,10 +3,10 @@ import {
   Form, Button, Dropdown, Image, Alert, Card, Row, Col, Pagination
 } from 'react-bootstrap';
 import { FaBars } from 'react-icons/fa';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import './adminstyle.css';
 
-const AdminPanel = () => {
+const ChatHistory = () => {
   const [users, setUsers] = useState([]);
   const [filters, setFilters] = useState({ username: '', subject: '', startDate: '', endDate: '', fileType: '' });
   const [showDateError, setShowDateError] = useState(false);
@@ -15,6 +15,7 @@ const AdminPanel = () => {
   const messagesPerPage = 5;
   const token = localStorage.getItem('token');
   const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
     fetch('http://localhost:8080/api/admin/users-chats', {
@@ -27,6 +28,19 @@ const AdminPanel = () => {
       })
       .catch(console.error);
   }, [token]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const filter = params.get('filter');
+
+    if (filter === 'pdf' || filter === 'image' || filter === 'none' || filter === 'nofile') {
+      const fileType = filter === 'nofile' ? 'none' : filter;
+      setFilters(prev => ({ ...prev, fileType }));
+    } else if (filter) {
+      // Treat anything else as a subject
+      setFilters(prev => ({ ...prev, subject: filter }));
+    }
+  }, [location.search]);
 
   useEffect(() => {
     if (filters.startDate && filters.endDate) {
@@ -47,6 +61,7 @@ const AdminPanel = () => {
     const timestamp = new Date(entry.timestamp);
     const start = filters.startDate ? new Date(filters.startDate) : null;
     const end = filters.endDate ? new Date(new Date(filters.endDate).setHours(23, 59, 59, 999)) : null;
+
     if (filters.username && !user.name.toLowerCase().includes(filters.username.toLowerCase())) return false;
     if (filters.subject && !chat.subject.toLowerCase().includes(filters.subject.toLowerCase())) return false;
     if (start && timestamp < start) return false;
@@ -54,6 +69,7 @@ const AdminPanel = () => {
     if (filters.fileType === 'image' && (!entry.imageUrl || entry.imageUrl.toLowerCase().endsWith('.pdf'))) return false;
     if (filters.fileType === 'pdf' && (!entry.imageUrl || !entry.imageUrl.toLowerCase().endsWith('.pdf'))) return false;
     if (filters.fileType === 'none' && entry.imageUrl) return false;
+
     return true;
   };
 
@@ -190,7 +206,6 @@ const AdminPanel = () => {
                       alt="chat"
                       style={{ height: '200px', objectFit: 'cover', borderRadius: 8 }}
                     />
-
                   )
                 )}
               </Card.Body>
@@ -204,4 +219,4 @@ const AdminPanel = () => {
   );
 };
 
-export default AdminPanel;
+export default ChatHistory;
