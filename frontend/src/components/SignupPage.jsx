@@ -1,45 +1,39 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import { useFormik } from 'formik';
 
 const SignupPage = () => {
   const navigate = useNavigate();
-  const [formData, setFormData] = useState({
-    name: '',
-    phone: '',
-    email: '',
-    password: ''
-  });
   const [successMessage, setSuccessMessage] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
 
-  const handleChange = e => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  };
-
-  const handleSubmit = async e => {
-    e.preventDefault();
-    setErrorMessage('');
-    try {
-      const res = await fetch('http://localhost:8080/api/auth/signup', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
-      });
-      const data = await res.json();
-      if (res.ok) {
-        setSuccessMessage('Sign Up successful. Please login.');
-        setTimeout(() => navigate('/login'), 1500);
-      } else {
-        setErrorMessage(data.message || 'Signup failed');
+  const formik = useFormik({
+    initialValues: {
+      name: '',
+      phone: '',
+      email: '',
+      password: ''
+    },
+    onSubmit: async values => {
+      setErrorMessage('');
+      try {
+        const res = await fetch('http://localhost:8080/api/auth/signup', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(values)
+        });
+        const data = await res.json();
+        if (res.ok) {
+          setSuccessMessage('Sign Up successful. Please login.');
+          setTimeout(() => navigate('/login'), 1500);
+        } else {
+          setErrorMessage(data.message || 'Signup failed');
+        }
+      } catch (err) {
+        setErrorMessage('An error occurred during signup');
       }
-    } catch (err) {
-      setErrorMessage('An error occurred during signup');
     }
-  };
+  });
 
   return (
     <div className="d-flex align-items-center auth px-0" style={{ minHeight: '100vh', background: '#f6f3fa' }}>
@@ -55,31 +49,22 @@ const SignupPage = () => {
           >
             <div className="brand-logo text-center mb-4">
               <img src="/logo.png" alt="logo" style={{ height: '15vh', marginBottom: 8 }} />
-              
             </div>
             <h4 style={{ fontWeight: 600, marginBottom: 6, color: '#222', fontSize: 22 }}>
               New here?
             </h4>
-            <h6
-              className="font-weight-light"
-              style={{
-                color: '#777',
-                fontWeight: 400,
-                fontSize: 15,
-                marginBottom: 28
-              }}
-            >
+            <h6 className="font-weight-light" style={{ color: '#777', fontWeight: 400, fontSize: 15, marginBottom: 28 }}>
               Signing up is easy. It only takes a few steps
             </h6>
-            <form className="pt-3" onSubmit={handleSubmit}>
+            <form className="pt-3" onSubmit={formik.handleSubmit}>
               <div className="form-group mb-3">
                 <input
                   type="text"
                   className="form-control form-control-lg"
                   name="name"
                   placeholder="Name"
-                  value={formData.name}
-                  onChange={handleChange}
+                  value={formik.values.name}
+                  onChange={formik.handleChange}
                   required
                   style={{
                     background: '#faf8fc',
@@ -98,8 +83,8 @@ const SignupPage = () => {
                   className="form-control form-control-lg"
                   name="phone"
                   placeholder="Phone"
-                  value={formData.phone}
-                  onChange={handleChange}
+                  value={formik.values.phone}
+                  onChange={formik.handleChange}
                   required
                   style={{
                     background: '#faf8fc',
@@ -118,8 +103,8 @@ const SignupPage = () => {
                   className="form-control form-control-lg"
                   name="email"
                   placeholder="Email"
-                  value={formData.email}
-                  onChange={handleChange}
+                  value={formik.values.email}
+                  onChange={formik.handleChange}
                   required
                   style={{
                     background: '#faf8fc',
@@ -138,8 +123,8 @@ const SignupPage = () => {
                   className="form-control form-control-lg"
                   name="password"
                   placeholder="Password"
-                  value={formData.password}
-                  onChange={handleChange}
+                  value={formik.values.password}
+                  onChange={formik.handleChange}
                   required
                   style={{
                     background: '#faf8fc',

@@ -1,19 +1,17 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Form } from 'react-bootstrap';
+import { Formik } from 'formik';
 
 const Login = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
   const navigate = useNavigate();
 
-  const handleLogin = async (e) => {
-    e.preventDefault();
+  const handleLogin = async (values) => {
     try {
       const res = await fetch('http://localhost:8080/api/auth/signin', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password })
+        body: JSON.stringify(values)
       });
 
       const data = await res.json();
@@ -43,72 +41,86 @@ const Login = () => {
               <img
                 src="/logo.png"
                 alt="logo"
-                style={{ height: '15vh',  marginBottom: '20px' }}
+                style={{ height: '15vh', marginBottom: '20px' }}
               />
             </div>
             <h4>Hello! let's get started</h4>
             <h6 className="font-weight-light mb-4">Sign in to continue.</h6>
-            <Form onSubmit={handleLogin}>
-              <Form.Group className="mb-3">
-                <Form.Control
-                  type="email"
-                  placeholder="Username"
-                  size="lg"
-                  className="h-auto"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                />
-              </Form.Group>
-              <Form.Group className="mb-3">
-                <Form.Control
-                  type="password"
-                  placeholder="Password"
-                  size="lg"
-                  className="h-auto"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                />
-              </Form.Group>
-              <div className="mt-3">
-                <button
-                  type="submit"
-                  className="btn btn-block btn-lg font-weight-medium auth-form-btn"
-                  style={{
-                    backgroundColor: '#a959ff',
-                    color: '#fff',
-                    border: 'none',
-                    width: '100%',
-                  }}
-                >
-                  SIGN IN
-                </button>
-              </div>
-              <div className="my-3 d-flex justify-content-between align-items-center">
-                <div className="form-check">
-                  <label className="form-check-label text-muted">
-                    <input type="checkbox" className="form-check-input" />
-                    <i className="input-helper"></i>
-                    Keep me signed in
-                  </label>
-                </div>
-                <a
-                  href="!#"
-                  onClick={(e) => e.preventDefault()}
-                  className="auth-link text-black"
-                  style={{ fontSize: '14px' }}
-                >
-                  Forgot password?
-                </a>
-              </div>
-              <div className="text-center mt-4 font-weight-light">
-                Don't have an account?{' '}
-                <Link to="/signup" className="text-primary">
-                  Create
-                </Link>
-              </div>
-            </Form>
+
+            <Formik
+              initialValues={{ email: '', password: '' }}
+              onSubmit={handleLogin}
+            >
+              {({
+                handleSubmit,
+                handleChange,
+                values
+              }) => (
+                <Form onSubmit={handleSubmit}>
+                  <Form.Group className="mb-3">
+                    <Form.Control
+                      type="email"
+                      name="email"
+                      placeholder="Username"
+                      size="lg"
+                      className="h-auto"
+                      value={values.email}
+                      onChange={handleChange}
+                      required
+                    />
+                  </Form.Group>
+                  <Form.Group className="mb-3">
+                    <Form.Control
+                      type="password"
+                      name="password"
+                      placeholder="Password"
+                      size="lg"
+                      className="h-auto"
+                      value={values.password}
+                      onChange={handleChange}
+                      required
+                    />
+                  </Form.Group>
+                  <div className="mt-3">
+                    <button
+                      type="submit"
+                      className="btn btn-block btn-lg font-weight-medium auth-form-btn"
+                      style={{
+                        backgroundColor: '#a959ff',
+                        color: '#fff',
+                        border: 'none',
+                        width: '100%',
+                      }}
+                    >
+                      SIGN IN
+                    </button>
+                  </div>
+                  <div className="my-3 d-flex justify-content-between align-items-center">
+                    <div className="form-check">
+                      <label className="form-check-label text-muted">
+                        <input type="checkbox" className="form-check-input" />
+                        <i className="input-helper"></i>
+                        Keep me signed in
+                      </label>
+                    </div>
+                    <a
+                      href="!#"
+                      onClick={(e) => e.preventDefault()}
+                      className="auth-link text-black"
+                      style={{ fontSize: '14px' }}
+                    >
+                      Forgot password?
+                    </a>
+                  </div>
+                  <div className="text-center mt-4 font-weight-light">
+                    Don't have an account?{' '}
+                    <Link to="/signup" className="text-primary">
+                      Create
+                    </Link>
+                  </div>
+                </Form>
+              )}
+            </Formik>
           </div>
         </div>
       </div>
