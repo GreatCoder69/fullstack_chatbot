@@ -114,6 +114,7 @@ const AdminPanel = () => {
           <li onClick={() => navigate('/admin')} style={{ cursor: 'pointer' }}>Dashboard</li>
           <li onClick={() => navigate('/history')} style={{ cursor: 'pointer' }}>Chat History</li>
           <li onClick={() => navigate('/logs')} style={{ cursor: 'pointer' }}>User Logs</li>
+          <li onClick={() => navigate('/edit-profile')} style={{ cursor: 'pointer' }}>Edit Profile</li>
         </ul>
       </aside>
 
