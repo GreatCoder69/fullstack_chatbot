@@ -193,21 +193,46 @@ const ChatHistory = () => {
                 {entry.question && <p><strong>Q:</strong> {entry.question}</p>}
                 <p><strong>A:</strong> {entry.answer}</p>
                 {entry.imageUrl && (
-                  entry.imageUrl.toLowerCase().endsWith('.pdf') ? (
-                    <div className="d-flex align-items-center gap-2">
-                      <span style={{ fontSize: 20 }}>📄</span>
-                      <a href={`http://localhost:8080${entry.imageUrl}`} target="_blank" rel="noopener noreferrer">
-                        {entry.imageUrl.split('/').pop()}
-                      </a>
-                    </div>
+                <>
+                  {entry.imageUrl.toLowerCase().endsWith('.pdf') ? (
+                    <>
+                      <div className="d-flex align-items-center gap-2">
+                        <span style={{ fontSize: 20 }}>📄</span>
+                        <a
+                          href={`http://localhost:8080${entry.imageUrl}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          {entry.imageUrl.split('/').pop()}
+                        </a>
+                      </div>
+
+                      {/* ✅ Download DOCX button for PDF only */}
+                      <div className="mt-2 d-flex flex-column gap-1">
+                        <button
+                          className="btn btn-outline-primary btn-sm"
+                          onClick={() =>
+                            window.open(`http://localhost:8080/api/download-docx/${entry._id}`, "_blank")
+                          }
+                        >
+                          Download AI Response (DOCX)
+                        </button>
+                        {entry.downloadCount > 0 && (
+                          <small className="text-muted">
+                            Downloaded {entry.downloadCount} time{entry.downloadCount > 1 ? "s" : ""}
+                          </small>
+                        )}
+                      </div>
+                    </>
                   ) : (
                     <img
                       src={`http://localhost:8080${entry.imageUrl}`}
                       alt="chat"
                       style={{ height: '200px', objectFit: 'cover', borderRadius: 8 }}
                     />
-                  )
-                )}
+                  )}
+                </>
+              )}
               </Card.Body>
             </Card>
           ))}
