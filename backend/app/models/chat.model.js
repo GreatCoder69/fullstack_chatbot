@@ -8,7 +8,11 @@ const ChatSchema = new mongoose.Schema({
       question: String,
       answer: String,
       timestamp: { type: Date, default: Date.now },
-      imageUrl: String // 👈 Added to store uploaded image path
+      imageUrl: String, // 👈 Added to store uploaded image path
+      downloadCount: {
+      type: Number,
+      default: 0
+    }
     }
   ],
   lastUpdated: { type: Date, default: Date.now }

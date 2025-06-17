@@ -29,12 +29,19 @@ exports.getAllUsersWithChats = async (req, res) => {
       return {
         name: user.name,
         email: user.email,
-        phone: user.phone, // ✅ Added phone here
+        phone: user.phone,
         profileimg: user.profileimg,
         isActive: user.isActive,
         chats: userChats.map(c => ({
           subject: c._id,
-          history: c.chat
+          history: c.chat.map(entry => ({
+            question: entry.question,
+            answer: entry.answer,
+            timestamp: entry.timestamp,
+            imageUrl: entry.imageUrl || null,
+            _id: entry._id,
+            downloadCount: entry.downloadCount || 0
+          }))
         }))
       };
     }));
@@ -45,6 +52,7 @@ exports.getAllUsersWithChats = async (req, res) => {
     res.status(500).json({ message: "Error fetching user chats" });
   }
 };
+
 
 exports.getAdminSummary = async (req, res) => {
   try {

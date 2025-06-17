@@ -79,7 +79,8 @@ const ChatHistory = () => {
         profileimg: user.profileimg,
         name: user.name,
         subject: chat.subject,
-        ...entry
+        ...entry,
+        downloadCount: entry.downloadCount || 0
       }))
     )
   );

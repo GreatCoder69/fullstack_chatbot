@@ -82,7 +82,10 @@ const ChatPage = () => {
             history[topic].push({
               sender: 'bot',
               message: entry.answer,
-              timestamp: entry.timestamp
+              timestamp: entry.timestamp,
+              _id: entry._id,
+              image: entry.imageURL ? `http://localhost:8080${entry.imageURL}` : null,
+              downloadCount: entry.downloadCount || 0
             });
           }
         });
@@ -456,12 +459,58 @@ const ChatPage = () => {
                 }`}
               >
                 {msg.image && (
-                  <img
-                    src={msg.image}
-                    alt="User upload"
-                    style={{ maxWidth: 200, borderRadius: 8 }}
-                  />
-                )}
+                      msg.image.toLowerCase().endsWith('.pdf') ? (
+                        <div className="d-flex flex-column align-items-start">
+                          <div className="d-flex align-items-center gap-2 mb-2">
+                            <span style={{ fontSize: 20 }}>📄</span>
+                            <a
+                              href={msg.image}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                            >
+                              {msg.image.split('/').pop()}
+                            </a>
+                          </div>
+
+                          <div className="d-flex align-items-center gap-3">
+                            <Button
+                              variant="outline-primary"
+                              size="sm"
+                              onClick={async () => {
+                                const entryId = msg._id;
+                                if (!entryId) {
+                                  alert("Entry ID missing");
+                                  return;
+                                }
+                                try {
+                                  const res = await fetch(`http://localhost:8080/api/download-docx/${entryId}`);
+                                  if (!res.ok) throw new Error("Download failed");
+                                  const blob = await res.blob();
+                                  const link = document.createElement('a');
+                                  link.href = window.URL.createObjectURL(blob);
+                                  link.download = `response-${entryId}.docx`;
+                                  link.click();
+                                } catch (err) {
+                                  alert("Error downloading DOCX");
+                                  console.error(err);
+                                }
+                              }}
+                            >
+                              ⬇ Download DOCX
+                            </Button>
+                            <small className="text-muted">
+                              Downloads: {msg.downloadCount || 0}
+                            </small>
+                          </div>
+                        </div>
+                      ) : (
+                        <img
+                          src={msg.image}
+                          alt="Uploaded"
+                          style={{ maxWidth: 200, borderRadius: 8 }}
+                        />
+                      )
+                    )}
                 {msg.message && (
                   <div style={{ marginTop: 8 }}>{msg.message}</div>
                 )}
