@@ -211,12 +211,12 @@ const ChatHistory = () => {
                       {/* ✅ Download DOCX button for PDF only */}
                       <div className="mt-2 d-flex flex-column gap-1">
                         <button
-                          className="btn btn-outline-primary btn-sm"
+                          className="btn btn-outline-primary btn-sm" style={{ width: "150px" }}
                           onClick={() =>
                             window.open(`http://localhost:8080/api/download-docx/${entry._id}`, "_blank")
                           }
                         >
-                          Download AI Response (DOCX)
+                          Download DOCX
                         </button>
                         {entry.downloadCount > 0 && (
                           <small className="text-muted">
