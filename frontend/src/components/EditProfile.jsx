@@ -7,10 +7,15 @@ import {
 } from 'react-icons/fa';
 import './adminstyle.css'; // You'll define styles here
 import { useNavigate } from "react-router-dom";
+import { ListGroup } from 'react-bootstrap';
 
 
 const AdminPanel = () => {
   const [users, setUsers] = useState([]);
+  const [logsModalOpen, setLogsModalOpen] = useState(false);
+  const [logsData, setLogsData] = useState([]);
+  const [logsLoading, setLogsLoading] = useState(false);
+  const [logsUser, setLogsUser] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(true);
@@ -56,6 +61,23 @@ const AdminPanel = () => {
         );
       }
     });
+  };
+  const fetchUserLogs = async (email, name) => {
+    setLogsLoading(true);
+    setLogsModalOpen(true);
+    setLogsUser(name);
+    try {
+      const res = await fetch(`http://localhost:8080/api/admin/user-logs?email=${email}`, {
+        headers: { 'x-access-token': token }
+      });
+      const data = await res.json();
+      if (data.success) setLogsData(data.logs || []);
+      else setLogsData([]);
+    } catch (err) {
+      setLogsData([]);
+    } finally {
+      setLogsLoading(false);
+    }
   };
 
   const openEditModal = async (email) => {
@@ -154,6 +176,7 @@ const AdminPanel = () => {
                   <th>Name</th>
                   <th>Email</th>
                   <th>Chat History</th>
+                  <th>User Logs</th>
                   <th>Status</th>
                   <th>Edit</th>
                 </tr>
@@ -173,6 +196,15 @@ const AdminPanel = () => {
                         onClick={() => navigate(`/history?user=${encodeURIComponent(user.name)}`)}
                       >
                         Go to History
+                      </Button>
+                    </td>
+                    <td>
+                      <Button
+                        variant="outline-secondary"
+                        size="sm"
+                        onClick={() => fetchUserLogs(user.email, user.name)}
+                      >
+                        Show Logs
                       </Button>
                     </td>
                     <td>
@@ -252,6 +284,31 @@ const AdminPanel = () => {
           </Form>
         </Modal.Body>
       </Modal>
+          <Modal show={logsModalOpen} onHide={() => setLogsModalOpen(false)} centered size="lg">
+      <Modal.Header closeButton>
+        <Modal.Title>Logs for {logsUser}</Modal.Title>
+      </Modal.Header>
+      <Modal.Body style={{ maxHeight: '70vh', overflowY: 'auto' }}>
+        {logsLoading ? (
+          <p>Loading logs...</p>
+        ) : logsData.length === 0 ? (
+          <p className="text-muted">No logs found.</p>
+        ) : (
+          <ListGroup variant="flush">
+            {logsData.map((log, i) => (
+              <ListGroup.Item key={i} className="py-3">
+                <p><strong>Action:</strong> {log.action}</p>
+                {log.message && <p><strong>Message:</strong> {log.message}</p>}
+                <p><strong>Time:</strong> {new Date(log.timestamp).toLocaleString()}</p>
+                {log.meta && Object.keys(log.meta).length > 0 && (
+                  <pre className="bg-light p-2 rounded border"><code>{JSON.stringify(log.meta, null, 2)}</code></pre>
+                )}
+              </ListGroup.Item>
+            ))}
+          </ListGroup>
+        )}
+      </Modal.Body>
+    </Modal>
     </div>
   );
 };
