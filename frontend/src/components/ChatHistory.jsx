@@ -32,6 +32,11 @@ const ChatHistory = () => {
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const filter = params.get('filter');
+    const userParam = params.get('user');
+
+    if (userParam) {
+      setFilters(prev => ({ ...prev, username: userParam }));
+    }
 
     if (filter === 'pdf' || filter === 'image' || filter === 'none' || filter === 'nofile') {
       const fileType = filter === 'nofile' ? 'none' : filter;

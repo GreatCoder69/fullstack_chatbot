@@ -170,7 +170,7 @@ const AdminPanel = () => {
                       <Button
                         variant="outline-primary"
                         size="sm"
-                        onClick={() => navigate('/history')}
+                        onClick={() => navigate(`/history?user=${encodeURIComponent(user.name)}`)}
                       >
                         Go to History
                       </Button>
