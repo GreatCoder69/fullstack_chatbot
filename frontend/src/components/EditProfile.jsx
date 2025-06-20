@@ -153,6 +153,7 @@ const AdminPanel = () => {
                   <th>User</th>
                   <th>Name</th>
                   <th>Email</th>
+                  <th>Chat History</th>
                   <th>Status</th>
                   <th>Edit</th>
                 </tr>
@@ -165,6 +166,15 @@ const AdminPanel = () => {
                     </td>
                     <td onClick={() => openEditModal(user.email)}>{user.name}</td>
                     <td onClick={() => openEditModal(user.email)}>{user.email}</td>
+                    <td>
+                      <Button
+                        variant="outline-primary"
+                        size="sm"
+                        onClick={() => navigate('/history')}
+                      >
+                        Go to History
+                      </Button>
+                    </td>
                     <td>
                       <Button
                         size="sm"
