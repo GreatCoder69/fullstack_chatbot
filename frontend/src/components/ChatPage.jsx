@@ -381,7 +381,10 @@ const ChatPage = () => {
 
   return (
     <div className="d-flex vh-100">
-      <div className="p-3 border-end" style={{ width: 300 }}>
+      <div 
+        className="p-3 border-end flex-shrink-0" 
+        style={{ width: 300, overflowY: 'auto' }}
+      >
         <Button className="w-100 mb-3" onClick={addTopic}>
           + New Chat
         </Button>
@@ -421,7 +424,10 @@ const ChatPage = () => {
         </div>
       </div>
 
-      <div className="flex-grow-1 d-flex flex-column">
+      <div 
+        className="flex-grow-1 d-flex flex-column" 
+        style={{ minWidth: 0 }}
+      >
         <div className="p-3 border-bottom d-flex justify-content-between align-items-center">
           <h5>{selectedTopic}</h5>
           <Dropdown align="end">

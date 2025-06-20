@@ -81,7 +81,6 @@ const EditUser = () => {
         <ul className="sidebar-nav">
           <li onClick={() => navigate('/admin')}>Dashboard</li>
           <li onClick={() => navigate('/history')}>Chat History</li>
-          <li onClick={() => navigate('/logs')}>User Logs</li>
           <li onClick={() => navigate('/edit-profile')}>Edit Profile</li>
         </ul>
       </aside>
