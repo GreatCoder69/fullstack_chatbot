@@ -90,9 +90,12 @@ const ChatHistory = () => {
     )
   );
 
-  const totalPages = Math.ceil(allEntries.length / messagesPerPage);
-  const paginatedEntries = allEntries.slice((currentPage - 1) * messagesPerPage, currentPage * messagesPerPage);
+  const sortedEntries = allEntries.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 
+// Paginate sorted entries
+  const paginatedEntries = sortedEntries.slice((currentPage - 1) * messagesPerPage, currentPage * messagesPerPage);
+  const totalPages = Math.ceil(allEntries.length / messagesPerPage);
+  
   const renderPagination = () => (
     <Pagination className="justify-content-center mt-4">
       <Pagination.First onClick={() => setCurrentPage(1)} disabled={currentPage === 1} />
@@ -142,13 +145,18 @@ const ChatHistory = () => {
           </Dropdown>
         </header>
 
-        <div className="px-4 mt-4 d-flex gap-3 flex-wrap align-items-center">
-          <Form.Control
-            placeholder="Search by user name"
+        <div className="px-4 mt-4 d-flex gap-3 flex-nowrap align-items-center overflow-auto">
+          <Form.Select
             value={filters.username}
             onChange={e => setFilters(prev => ({ ...prev, username: e.target.value }))}
             style={{ maxWidth: 200 }}
-          />
+          >
+            <option value="">All Users</option>
+            {[...new Set(users.map(user => user.name))].map((name, idx) => (
+              <option key={idx} value={name}>{name}</option>
+            ))}
+          </Form.Select>
+
           <Form.Control
             placeholder="Search by subject"
             value={filters.subject}
