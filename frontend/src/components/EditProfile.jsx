@@ -223,7 +223,7 @@ const AdminPanel = () => {
                       <Button
                         variant="outline-dark"
                         size="sm"
-                        onClick={() => window.open(`/edit-user/${user.email}`, '_blank')}
+                        onClick={() => navigate(`/edit-user/${user.email}`)}
                       >
                         Edit
                       </Button>
@@ -239,43 +239,102 @@ const AdminPanel = () => {
 
       {/* Modal */}
       <Modal show={showModal} onHide={() => setShowModal(false)} centered>
-        <Modal.Body className="p-5">
+        <Modal.Body
+          style={{
+            backgroundColor: '#f5f0ff', // Soft purple background
+            borderRadius: '16px',
+            padding: '40px',  
+            width: '100%',
+            boxShadow: '0 8px 24px rgba(0, 0, 0, 0.1)'
+          }}
+        >
           <div className="text-center mb-4">
             <img
               src="https://cdn-icons-png.flaticon.com/512/4712/4712109.png"
-              width={50}
-              height={50}
+              width={60}
+              height={60}
               alt="avatar"
+              style={{ borderRadius: '50%', border: '3px solid #9b59b6', padding: '4px' }}
             />
-            <h5>Edit User</h5>
+            <h4 className="mt-3" style={{ color: '#6c3483', fontWeight: 'bold' }}>Edit User</h4>
+            <p className="text-muted" style={{ fontSize: '0.9rem' }}>
+              Make changes below and hit save
+            </p>
           </div>
+
           <Form onSubmit={handleFormSubmit}>
             <Form.Group className="mb-3">
-              <Form.Label>Name</Form.Label>
-              <Form.Control name="name" value={formData.name} onChange={handleInputChange} />
+              <Form.Label style={{ fontWeight: '500', color: '#6c3483' }}>Name</Form.Label>
+              <Form.Control
+                name="name"
+                value={formData.name}
+                onChange={handleInputChange}
+                placeholder="Enter name"
+                style={{ borderRadius: '8px' }}
+              />
             </Form.Group>
+
             <Form.Group className="mb-3">
-              <Form.Label>Phone</Form.Label>
-              <Form.Control name="phone" value={formData.phone} onChange={handleInputChange} />
+              <Form.Label style={{ fontWeight: '500', color: '#6c3483' }}>Phone</Form.Label>
+              <Form.Control
+                name="phone"
+                value={formData.phone}
+                onChange={handleInputChange}
+                placeholder="Enter phone number"
+                style={{ borderRadius: '8px' }}
+              />
             </Form.Group>
+
             <Form.Group className="mb-3">
-              <Form.Label>Password</Form.Label>
-              <Form.Control type="password" name="password" value={formData.password} onChange={handleInputChange} />
+              <Form.Label style={{ fontWeight: '500', color: '#6c3483' }}>Password</Form.Label>
+              <Form.Control
+                type="password"
+                name="password"
+                value={formData.password}
+                onChange={handleInputChange}
+                placeholder="Enter password"
+                style={{ borderRadius: '8px' }}
+              />
             </Form.Group>
+
             <Form.Group className="mb-4">
-              <Form.Label>Profile Image</Form.Label>
-              <Form.Control type="file" name="profileimg" onChange={handleInputChange} />
+              <Form.Label style={{ fontWeight: '500', color: '#6c3483' }}>Profile Image</Form.Label>
+              <Form.Control
+                type="file"
+                name="profileimg"
+                onChange={handleInputChange}
+                style={{ borderRadius: '8px' }}
+              />
             </Form.Group>
-            <div className="d-grid gap-2">
+
+            {message && (
+              <div className="mb-3">
+                <p className="text-center text-info" style={{ fontWeight: '500' }}>{message}</p>
+              </div>
+            )}
+
+            <div className="d-flex justify-content-between mt-4">
               <Button
                 type="submit"
-                className="btn-purple"
+                style={{
+                  backgroundColor: '#9b59b6',
+                  border: 'none',
+                  width: '48%',
+                  fontWeight: '500',
+                  borderRadius: '10px'
+                }}
               >
-                Save Changes
+                Save
               </Button>
               <Button
-                variant="light"
-                className="btn-cancel"
+                variant="outline-secondary"
+                style={{
+                  width: '48%',
+                  color: '#9b59b6',
+                  border: '2px solid #9b59b6',
+                  fontWeight: '500',
+                  borderRadius: '10px'
+                }}
                 onClick={() => setShowModal(false)}
               >
                 Cancel
@@ -284,31 +343,6 @@ const AdminPanel = () => {
           </Form>
         </Modal.Body>
       </Modal>
-          <Modal show={logsModalOpen} onHide={() => setLogsModalOpen(false)} centered size="lg">
-      <Modal.Header closeButton>
-        <Modal.Title>Logs for {logsUser}</Modal.Title>
-      </Modal.Header>
-      <Modal.Body style={{ maxHeight: '70vh', overflowY: 'auto' }}>
-        {logsLoading ? (
-          <p>Loading logs...</p>
-        ) : logsData.length === 0 ? (
-          <p className="text-muted">No logs found.</p>
-        ) : (
-          <ListGroup variant="flush">
-            {logsData.map((log, i) => (
-              <ListGroup.Item key={i} className="py-3">
-                <p><strong>Action:</strong> {log.action}</p>
-                {log.message && <p><strong>Message:</strong> {log.message}</p>}
-                <p><strong>Time:</strong> {new Date(log.timestamp).toLocaleString()}</p>
-                {log.meta && Object.keys(log.meta).length > 0 && (
-                  <pre className="bg-light p-2 rounded border"><code>{JSON.stringify(log.meta, null, 2)}</code></pre>
-                )}
-              </ListGroup.Item>
-            ))}
-          </ListGroup>
-        )}
-      </Modal.Body>
-    </Modal>
     </div>
   );
 };
