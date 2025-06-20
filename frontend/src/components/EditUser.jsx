@@ -129,22 +129,22 @@ const EditUser = () => {
               <p className="text-muted" style={{ fontSize: '1rem' }}>Make changes and hit update</p>
             </div>
 
-            <Form onSubmit={handleSubmit} style={{ fontSize: '0.85rem' }}>
+            <Form onSubmit={handleSubmit}>
               <Form.Group className="mb-3">
                 <Form.Label>Name</Form.Label>
-                <Form.Control size="lg" name="name" value={formData.name} onChange={handleInputChange} />
+                <Form.Control name="name" value={formData.name} onChange={handleInputChange} />
               </Form.Group>
               <Form.Group className="mb-3">
                 <Form.Label>Phone</Form.Label>
-                <Form.Control size="lg" name="phone" value={formData.phone} onChange={handleInputChange} />
+                <Form.Control name="phone" value={formData.phone} onChange={handleInputChange} />
               </Form.Group>
               <Form.Group className="mb-3">
                 <Form.Label>Password</Form.Label>
-                <Form.Control size="lg" type="password" name="password" value={formData.password} onChange={handleInputChange} />
+                <Form.Control type="password" name="password" value={formData.password} onChange={handleInputChange} />
               </Form.Group>
               <Form.Group className="mb-4">
                 <Form.Label>Profile Image</Form.Label>
-                <Form.Control size="lg" type="file" name="profileimg" onChange={handleInputChange} />
+                <Form.Control type="file" name="profileimg" onChange={handleInputChange} />
               </Form.Group>
 
               {message && <Alert variant="info">{message}</Alert>}
